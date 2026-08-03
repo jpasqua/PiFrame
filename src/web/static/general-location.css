@@ -1,0 +1,12 @@
+.location-actions { display:flex; flex-wrap:wrap; gap:8px; }
+.secondary-action { border:1px solid var(--line); border-radius:5px; padding:8px 11px; color:var(--ink); background:#f6f7f8; font:inherit; cursor:pointer; }
+.secondary-action:hover { color:var(--accent); background:#eff8fa; }
+.location-status,.location-disclosure { margin:0; }
+.location-disclosure { color:var(--muted); font-size:.82rem; }
+.location-results { display:grid; gap:7px; max-width:570px; }
+.location-result { display:flex; justify-content:space-between; gap:12px; padding:10px 12px; border:1px solid var(--line); border-radius:7px; background:#fff; text-align:left; color:var(--ink); font:inherit; cursor:pointer; }
+.location-result:hover { border-color:#8ac4cf; background:#f5fbfc; }
+.location-result small { white-space:nowrap; }
+.advanced-location { max-width:570px; color:var(--ink); }
+.advanced-location summary { cursor:pointer; font-weight:700; }
+.advanced-location-fields { display:grid; gap:12px; margin-top:14px; }

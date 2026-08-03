@@ -1,9 +1,11 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
 import type { AppContext } from "../data/app-context.js";
 import { PhotoIngestionService } from "../services/photo-ingestion.js";
+import { LocationLookupService } from "../services/location-lookup.js";
 import { redirect, sendHtml } from "./http/responses.js";
 import { handleDisplayRoute } from "./routes/display.js";
 import { handleLibraryActions } from "./routes/library-actions.js";
+import { handleLocationRoute } from "./routes/location.js";
 import { handleSettingsActions } from "./routes/settings-actions.js";
 import { handleSystemRoute } from "./routes/system.js";
 import { handleWorkspaceGetRoute } from "./routes/workspace.js";
@@ -15,6 +17,7 @@ interface App {
 
 export function createApp(context: AppContext): App {
   const ingestion = new PhotoIngestionService(context.config, context.photos);
+  const locationLookup = new LocationLookupService();
 
   return {
     async handle(req, res) {
@@ -25,6 +28,8 @@ export function createApp(context: AppContext): App {
 
       if (handleDisplayRoute(context, req, res, url)) return;
       if (handleWorkspaceGetRoute(context, req, res, url)) return;
+
+      if (await handleLocationRoute(locationLookup, req, res, url)) return;
 
       if (await handleSettingsActions(context, req, res, url)) return;
 
