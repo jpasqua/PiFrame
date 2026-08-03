@@ -1,7 +1,7 @@
-import type { DisplaySettings } from "../../core/settings.js";
+import type { DisplaySettings, FrameSettings } from "../../core/settings.js";
 import { renderLogo } from "./shared.js";
 
-export function renderDisplayPage(settings: DisplaySettings): string {
+export function renderDisplayPage(settings: DisplaySettings, frame: FrameSettings): string {
   const durationMs = Math.max(1_000, Math.round(settings.photoDurationSeconds * 1_000));
   const presentation = settings.imagePresentationMode === "fill" ? "cover" : "contain";
   const isTriple = settings.screenLayout === "triple";
@@ -18,6 +18,7 @@ export function renderDisplayPage(settings: DisplaySettings): string {
       main { position:relative; width:100vw; height:100vh; display:grid; place-items:center; background:#000; }
       #stage { position:absolute; inset:0; display:grid; grid-template-columns:1fr; gap:0; background:#000; }
       #stage.triple { grid-template-columns:repeat(3, minmax(0, 1fr)); gap:2px; }
+      main.orientation-90 #stage.triple, main.orientation-270 #stage.triple { grid-template-columns:1fr; grid-template-rows:repeat(3, minmax(0, 1fr)); }
       img { width:100%; height:100%; min-width:0; object-fit:${presentation}; opacity:0; transition:opacity 900ms ease; background:#000; }
       img.visible { opacity:1; } #empty { max-width:32rem; padding:2rem; text-align:center; color:#bdb6aa; line-height:1.6; }
       #caption { position:absolute; right:18px; bottom:14px; margin:0; max-width:60vw; color:rgba(255,255,255,.72); font-size:.85rem; text-shadow:0 1px 3px #000; opacity:0; transition:opacity .4s; }
@@ -26,7 +27,7 @@ export function renderDisplayPage(settings: DisplaySettings): string {
     </style>
   </head>
   <body>
-    <main>
+    <main class="orientation-${frame.displayOrientation.toString()}">
       <div style="position:absolute;left:20px;top:18px;z-index:2">${renderLogo(128)}</div>
       <section id="stage" class="${isTriple ? "triple" : "single"}"><img alt=""><img alt=""><img alt=""></section>
       <p id="empty">Waiting for a ready photo. Upload images from the local administration page.</p>
@@ -60,8 +61,8 @@ export function renderDisplayPage(settings: DisplaySettings): string {
         if (!clock) return;
         const date = new Date();
         const timeOptions = { hour: "numeric", minute: "2-digit"${settings.clockShowSeconds ? ', second: "2-digit"' : ""}${settings.clockFormat === "12h" ? ", hour12: true" : settings.clockFormat === "24h" ? ", hour12: false" : ""} };
-        const time = new Intl.DateTimeFormat(undefined, timeOptions).format(date);
-        const day = ${settings.clockShowDate ? 'new Intl.DateTimeFormat(undefined, { weekday: "short", month: "short", day: "numeric" }).format(date)' : '""'};
+        const time = new Intl.DateTimeFormat(${JSON.stringify(frame.language)}, { ...timeOptions, timeZone: ${JSON.stringify(frame.timeZone)} }).format(date);
+        const day = ${settings.clockShowDate ? `new Intl.DateTimeFormat(${JSON.stringify(frame.language)}, { timeZone: ${JSON.stringify(frame.timeZone)}, weekday: "short", month: "short", day: "numeric" }).format(date)` : '""'};
         clock.textContent = day ? day + "  " + time : time;
       }
 
@@ -130,4 +131,3 @@ export function renderDisplayPage(settings: DisplaySettings): string {
   </body>
 </html>`;
 }
-

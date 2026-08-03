@@ -5,7 +5,8 @@ PiFrame is a local-first digital picture frame built with Node.js, TypeScript, S
 ## Current Features
 
 * SQLite-backed albums and managed photo storage
-* Unified owner workspace with Dashboard, General, Display, Schedule, Albums, and System Status views
+* Unified owner workspace with Dashboard, General, Presentation, Schedule, Albums, and System Status views
+* General frame settings for identity, local description, location, time zone, language, and display orientation
 * Album creation, renaming, and two-step deletion that removes contained photos and managed assets
 * Album detail pages with a batch upload queue, Detail and Grid photo views, rotation, retry, and deletion actions
 * Multi-file image upload for JPEG, PNG, WebP, GIF, TIFF, AVIF, and HEIF files up to 25 MB each

@@ -1,17 +1,29 @@
 import type { DisplaySettings, ScheduleSettings } from "../core/settings.js";
 import type { PhotoRecord } from "../data/photo-repository.js";
 
-export function isDisplayOn(settings: ScheduleSettings, now: Date): boolean {
+export function isDisplayOn(settings: ScheduleSettings, now: Date, timeZone = "UTC"): boolean {
   if (settings.overrideState === "force-on") return true;
   if (settings.overrideState === "force-off") return false;
   if (!settings.enabled) return true;
-  const currentMinutes = now.getHours() * 60 + now.getMinutes();
+  const currentMinutes = currentTimeInZone(now, timeZone);
   const onMinutes = timeOfDayToMinutes(settings.dailyOnTime);
   const offMinutes = timeOfDayToMinutes(settings.dailyOffTime);
   if (onMinutes === offMinutes) return true;
   return onMinutes < offMinutes
     ? currentMinutes >= onMinutes && currentMinutes < offMinutes
     : currentMinutes >= onMinutes || currentMinutes < offMinutes;
+}
+
+function currentTimeInZone(now: Date, timeZone: string): number {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23"
+  }).formatToParts(now);
+  const hour = Number(parts.find((part) => part.type === "hour")?.value ?? 0);
+  const minute = Number(parts.find((part) => part.type === "minute")?.value ?? 0);
+  return hour * 60 + minute;
 }
 
 export function selectDisplayPhotos(photos: PhotoRecord[], settings: DisplaySettings, afterId: string | null): PhotoRecord[] {

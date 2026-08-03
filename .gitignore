@@ -3,7 +3,7 @@ node_modules/
 dist/
 
 # PiFrame runtime data
-data/
+/data/
 logs/
 
 # Local environment and diagnostics

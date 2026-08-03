@@ -1,5 +1,5 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
-import { createDefaultDisplaySettings, createDefaultScheduleSettings, type DisplaySettings, type ScheduleSettings } from "../../core/settings.js";
+import { createDefaultDisplaySettings, createDefaultFrameSettings, createDefaultScheduleSettings, type DisplaySettings, type FrameSettings, type ScheduleSettings } from "../../core/settings.js";
 import type { AppContext } from "../../data/app-context.js";
 import { isDisplayOn, selectDisplayPhotos } from "../display-state.js";
 import { sendHtml, sendJson } from "../http/responses.js";
@@ -13,7 +13,8 @@ export function handleDisplayRoute(
 ): boolean {
   if (req.method === "GET" && url.pathname === "/display") {
     const settings = context.settings.getJson<DisplaySettings>("display") ?? createDefaultDisplaySettings();
-    sendHtml(res, 200, renderDisplayPage(settings));
+    const frame = context.settings.getJson<FrameSettings>("frame") ?? createDefaultFrameSettings();
+    sendHtml(res, 200, renderDisplayPage(settings, frame));
     return true;
   }
 
@@ -21,7 +22,8 @@ export function handleDisplayRoute(
 
   const settings = context.settings.getJson<DisplaySettings>("display") ?? createDefaultDisplaySettings();
   const schedule = context.settings.getJson<ScheduleSettings>("schedule") ?? createDefaultScheduleSettings();
-  if (!isDisplayOn(schedule, new Date())) {
+  const frame = context.settings.getJson<FrameSettings>("frame") ?? createDefaultFrameSettings();
+  if (!isDisplayOn(schedule, new Date(), frame.timeZone)) {
     sendJson(res, 200, { displayOn: false, photo: null, photos: [] });
     return true;
   }

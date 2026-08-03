@@ -1,15 +1,13 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
 import type { AppContext } from "../data/app-context.js";
 import { PhotoIngestionService } from "../services/photo-ingestion.js";
-import { sendHtml } from "./http/responses.js";
+import { redirect, sendHtml } from "./http/responses.js";
 import { handleDisplayRoute } from "./routes/display.js";
 import { handleLibraryActions } from "./routes/library-actions.js";
 import { handleSettingsActions } from "./routes/settings-actions.js";
 import { handleSystemRoute } from "./routes/system.js";
 import { handleWorkspaceGetRoute } from "./routes/workspace.js";
-import { readFlash } from "./views/shared.js";
 import { renderNotFoundPage as renderNotFoundView } from "./views/system.js";
-import { renderScheduleSettingsPage } from "./views/workspace.js";
 
 interface App {
   handle(req: IncomingMessage, res: ServerResponse): void;
@@ -31,7 +29,8 @@ export function createApp(context: AppContext): App {
       if (await handleSettingsActions(context, req, res, url)) return;
 
       if (method === "GET" && url.pathname === "/admin/schedule") {
-        return sendHtml(res, 200, renderScheduleSettingsPage(context, readFlash(url)));
+        redirect(res, "/?view=schedule");
+        return;
       }
 
       const libraryHandled = await handleLibraryActions(context, ingestion, req, res, url);
