@@ -1,0 +1,1225 @@
+Raspberry Pi Digital Picture Frame
+
+Product Requirements Specification
+
+Document status: Draft
+Target platform: Raspberry Pi 4 or Raspberry Pi 5
+Primary implementation language: TypeScript
+Display connection: Standard HDMI display
+Administration model: Single local administrator
+Network access: Local network only
+
+⸻
+
+1. Product Overview
+
+The Digital Picture Frame application is a self-contained photo display system designed to run on a Raspberry Pi connected to a standard HDMI monitor or television.
+
+The Raspberry Pi shall boot directly into a full-screen photo display without requiring a keyboard, mouse, or manual login. Users shall manage photos and configure display behavior through a lightweight browser-based administration interface accessible from other devices on the same local network.
+
+Photos shall be stored locally on the Raspberry Pi and organized into folders. The user may select one or more folders for display and configure presentation settings such as display duration, transitions, layout, screen orientation, image scaling, clock overlay, and daily operating hours.
+
+The system is intended to operate continuously and recover automatically after power loss, reboot, application failure, or temporary network interruption.
+
+The system shall be architected with a clear separation between platform-independent application logic and Raspberry Pi-specific functionality. Core components—including photo management, slideshow logic, scheduling, configuration management, and the web administration interface—shall be capable of running on a standard desktop operating system such as macOS with minimal platform-specific adaptations. Hardware-dependent functionality, such as kiosk display management, HDMI power control, and Raspberry Pi startup integration, shall be isolated behind well-defined interfaces. This architecture is intended to facilitate rapid development, testing, debugging, and automated testing on development workstations while minimizing dependencies on the target Raspberry Pi environment.
+
+⸻
+
+2. Goals
+
+The application shall:
+
+1. Provide an appliance-like digital photo frame experience.
+2. Start displaying photos automatically after the Raspberry Pi boots.
+3. Require no keyboard or mouse during normal operation.
+4. Allow complete management from a local web browser.
+5. Store and organize photos locally on the Raspberry Pi.
+6. Support both landscape and portrait displays.
+7. Display either one photo or three photos simultaneously.
+8. Operate reliably for long periods with minimal maintenance.
+9. Use a lightweight TypeScript-based implementation.
+10. Avoid heavyweight client-side web frameworks such as React.
+
+⸻
+
+3. Non-Goals
+
+The initial version shall not require or provide:
+
+* Cloud photo storage integration.
+* Google Photos, Apple Photos, Dropbox, OneDrive, or similar services.
+* USB photo import.
+* Remote administration over the public internet.
+* Multiple user accounts.
+* User authentication.
+* Individual-photo playlists.
+* Social sharing.
+* Photo editing.
+* Video playback.
+* Audio playback.
+* Touchscreen-specific controls.
+* Complex calendar or weather integrations.
+
+These features may be considered in future versions but are outside the initial scope.
+
+⸻
+
+4. Target Environment
+
+4.1 Hardware
+
+The application shall support:
+
+* Raspberry Pi 4.
+* Raspberry Pi 5.
+* HDMI-connected displays.
+* Common display resolutions, including:
+    * 1920 × 1080.
+    * 2560 × 1440.
+    * 3840 × 2160, where supported by the Raspberry Pi and display.
+* Displays mounted in either landscape or portrait orientation.
+* Raspberry Pi storage using microSD or an attached local storage device mounted as part of the operating system.
+
+4.2 Operating System
+
+The application shall support a current Raspberry Pi OS release based on modern Debian Linux.
+
+The application should not depend on features unique to one minor Raspberry Pi OS release.
+
+Both 32-bit and 64-bit operating systems may be considered, but 64-bit Raspberry Pi OS should be the preferred deployment target.
+
+4.3 Browser Environment
+
+The display interface shall run in a full-screen kiosk browser on the Raspberry Pi.
+
+The administration interface shall support current versions of common desktop and mobile browsers, including:
+
+* Safari.
+* Chrome.
+* Firefox.
+* Microsoft Edge.
+
+The administration interface shall be usable from phones, tablets, and desktop computers.
+
+⸻
+
+5. System Modes
+
+The system shall have two primary interfaces.
+
+5.1 Display Interface
+
+The Display Interface is the full-screen photo presentation shown on the HDMI display.
+
+It shall:
+
+* Start automatically after system boot.
+* Run in kiosk mode.
+* Hide browser chrome, menus, cursors, scrollbars, and operating system controls.
+* Display photos according to the current configuration.
+* Continue operating when the administration interface is not open.
+* Resume automatically after application or browser restart.
+
+5.2 Administration Interface
+
+The Administration Interface is a local web application used to:
+
+* Upload photos.
+* Create and manage folders.
+* Select displayed folders.
+* Configure slideshow behavior.
+* Configure screen layout and orientation.
+* Configure the clock overlay.
+* Configure the daily display schedule.
+* View storage and system status.
+
+⸻
+
+6. Network Requirements
+
+6.1 Local Access
+
+The Administration Interface shall be accessible only from the local network.
+
+The application shall not intentionally expose its administration interface to the public internet.
+
+The system shall listen on a configurable local network port.
+
+6.2 Address Discovery
+
+The administration interface should be reachable using a predictable local hostname, such as:
+
+http://pictureframe.local
+
+The system shall also display its current IP address in an accessible status area or startup diagnostic screen.
+
+6.3 Authentication
+
+Authentication is not required for the initial version.
+
+The application should display a warning in its documentation that any device on the local network may access the administration interface.
+
+6.4 Network Independence
+
+The Display Interface shall continue displaying locally stored photos if:
+
+* The Ethernet connection is disconnected.
+* Wi-Fi becomes unavailable.
+* The local router restarts.
+* The Raspberry Pi has no internet access.
+
+Internet connectivity shall not be required for normal operation.
+
+⸻
+
+7. Photo Storage and Organization
+
+7.1 Local Storage
+
+All uploaded photos shall be stored locally on the Raspberry Pi.
+
+The application shall maintain its own managed photo storage directory.
+
+The application shall not require users to manually manipulate files through the operating system.
+
+7.2 Folders
+
+The user shall be able to:
+
+* Create a folder.
+* Rename a folder.
+* Delete a folder.
+* View folders.
+* Open a folder.
+* View photos in a folder.
+* Upload photos into a selected folder.
+* Move photos between folders.
+* Delete photos.
+* Select multiple photos for batch operations.
+
+Folder names shall be unique within the application.
+
+The application shall prevent or sanitize folder names that contain unsupported filesystem characters.
+
+7.3 Photo Metadata
+
+For each photo, the system should retain:
+
+* Original filename.
+* Internal unique identifier.
+* Folder assignment.
+* Upload date and time.
+* File size.
+* Pixel dimensions.
+* Orientation metadata.
+* File type.
+* Optional capture date when available from EXIF metadata.
+
+7.4 Supported File Types
+
+The initial version shall support common still-image formats:
+
+* JPEG.
+* PNG.
+* WebP.
+
+HEIC support may be provided if it can be implemented reliably without significantly increasing deployment complexity.
+
+Unsupported files shall be rejected with a clear explanation.
+
+7.5 Uploading
+
+The Administration Interface shall support:
+
+* Selecting one or more image files using a file picker.
+* Drag-and-drop uploading from desktop browsers.
+* Upload progress indication.
+* Clear success and failure status.
+* Continuing an upload batch when one file fails.
+* Duplicate filename handling.
+
+The system shall not overwrite an existing image silently.
+
+When a filename conflict occurs, the system shall either:
+
+* Generate a unique stored filename, or
+* Ask the user how to resolve the conflict.
+
+The original displayed filename should remain visible in the interface.
+
+7.6 ZIP Upload
+
+Uploading a ZIP archive containing multiple photos is a desirable but optional feature.
+
+When implemented, ZIP upload shall:
+
+* Extract supported image files.
+* Ignore unsupported files and hidden operating system files.
+* Reject unsafe archive paths.
+* Prevent extraction outside the managed storage directory.
+* Report the number of imported, skipped, and failed files.
+* Optionally preserve folders contained within the archive.
+* Prevent excessively large or malicious archives from exhausting system resources.
+
+ZIP upload is classified as a “nice to have” feature and is not required for the initial release.
+
+7.7 Storage Status
+
+The Administration Interface shall display:
+
+* Total storage capacity.
+* Used storage.
+* Available storage.
+* Storage used by managed photos.
+* A warning when free storage falls below a configurable safety threshold.
+
+The system shall reject uploads gracefully when insufficient storage is available.
+
+⸻
+
+8. Folder Selection for Display
+
+The user shall be able to select one or more photo folders for display.
+
+The application shall display photos from the union of all selected folders.
+
+The user shall be able to:
+
+* Enable a folder for display.
+* Disable a folder from display.
+* Select all folders.
+* Deselect all folders.
+* See the number of eligible photos in each folder.
+* See the total number of photos in the current display selection.
+
+At least one folder containing at least one supported photo must be selected before a slideshow can operate normally.
+
+When no photos are available, the Display Interface shall show an informative placeholder rather than a blank or crashed screen.
+
+Example placeholder text:
+
+“No photos are currently selected. Open the Picture Frame administration page to add or select photos.”
+
+⸻
+
+9. Photo Ordering
+
+The application shall support the following global ordering modes:
+
+* Random.
+* Filename ascending.
+* Filename descending.
+* Upload date, newest first.
+* Upload date, oldest first.
+* Capture date, newest first, when metadata is available.
+* Capture date, oldest first, when metadata is available.
+
+Random mode should avoid showing the same photo twice in immediate succession.
+
+Random mode should attempt to display all eligible photos before repeating photos when practical.
+
+When multiple folders are selected, photos from all selected folders shall participate in the selected ordering method.
+
+⸻
+
+10. Photo Duration
+
+The user shall be able to configure the amount of time each slideshow state remains visible.
+
+The configuration shall be global.
+
+The interface shall provide:
+
+* A numeric duration entry.
+* A sensible minimum value.
+* A sensible maximum value.
+* Common presets.
+
+Suggested presets include:
+
+* 5 seconds.
+* 10 seconds.
+* 15 seconds.
+* 30 seconds.
+* 1 minute.
+* 5 minutes.
+* 15 minutes.
+* 30 minutes.
+* 1 hour.
+
+The minimum permitted duration should prevent unstable or excessively rapid switching.
+
+The configured duration shall apply to:
+
+* A single photo in one-photo layout.
+* The entire three-photo arrangement in three-photo layout.
+
+⸻
+
+11. Transition Styles
+
+The user shall be able to select a global transition style.
+
+The initial version shall support:
+
+* None or immediate cut.
+* Crossfade.
+* Fade through black.
+* Slide left.
+* Slide right.
+* Slow zoom or pan.
+
+The application may omit transitions that do not perform smoothly on the target Raspberry Pi hardware.
+
+The user shall be able to configure transition duration separately from photo display duration.
+
+The application shall prevent transition duration from exceeding the total photo display duration.
+
+The transition system shall prioritize smooth, reliable playback over decorative complexity.
+
+⸻
+
+12. Screen Orientation
+
+The user shall explicitly select one of the following display orientations:
+
+* Landscape.
+* Portrait.
+
+Changing orientation shall update the display system and slideshow layout.
+
+The orientation setting shall persist across reboot.
+
+The system shall not depend solely on automatic display orientation detection.
+
+The application should provide an orientation preview in the Administration Interface.
+
+The application shall clearly indicate when an operating system restart or display-service restart is required for an orientation change.
+
+⸻
+
+13. Display Layouts
+
+The user shall select one of two global layouts.
+
+13.1 Single-Photo Layout
+
+The screen shall display one photo at a time.
+
+The photo shall use the full available display area, subject to the selected image presentation mode and clock overlay.
+
+13.2 Three-Photo Layout
+
+The screen shall display three photos simultaneously:
+
+* One large photo.
+* Two smaller photos.
+
+The layout shall be fixed and automatically adapted for landscape and portrait orientation.
+
+Landscape Arrangement
+
+The preferred landscape arrangement shall be:
+
+* One large photo occupying approximately two-thirds of the screen width.
+* Two smaller photos stacked vertically in the remaining area.
+
+Portrait Arrangement
+
+The preferred portrait arrangement shall be:
+
+* One large photo occupying approximately two-thirds of the screen height.
+* Two smaller photos arranged side by side in the remaining area.
+
+The exact proportions may vary to preserve clean spacing and visual balance.
+
+Each photo region shall:
+
+* Apply the configured global image presentation mode.
+* Maintain a consistent gutter or spacing from adjacent photo regions.
+* Avoid overlap with other regions.
+* Avoid overlap with the clock overlay where practical.
+
+13.3 Photo Rotation Within Three-Photo Layout
+
+At each slideshow interval, all three displayed images should be replaced as a group.
+
+The application should avoid displaying the same photo in more than one region simultaneously.
+
+When fewer than three eligible photos exist, the system shall degrade gracefully by either:
+
+* Reusing photos only when unavoidable, or
+* Displaying fewer populated regions with a neutral background.
+
+The chosen behavior shall be consistent and documented.
+
+⸻
+
+14. Image Presentation Modes
+
+The user shall select one global presentation mode.
+
+14.1 Fit
+
+The complete image shall be visible.
+
+The image shall be scaled proportionally until it fits within its display region.
+
+Unused space shall be filled with a configurable neutral background, initially black.
+
+No part of the image shall be cropped.
+
+14.2 Fill
+
+The image shall completely fill its display region.
+
+The image shall retain its aspect ratio.
+
+Parts of the image may be cropped.
+
+Cropping should be centered by default.
+
+The system may use orientation or focal-point metadata in future versions, but focal-point selection is not required initially.
+
+14.3 Fit with Blurred Background
+
+The complete image shall be visible in the foreground.
+
+The image shall be scaled proportionally until it fits within its display region.
+
+A second copy of the image shall:
+
+* Fill the entire display region.
+* Be cropped as necessary.
+* Be heavily blurred.
+* Be visually subdued so it does not compete with the foreground image.
+
+The blurred background shall not create obvious sharp edges or unfilled bars.
+
+This mode shall perform adequately on Raspberry Pi 4 and Raspberry Pi 5 hardware.
+
+The implementation may generate and cache blurred derivatives to reduce runtime processing.
+
+⸻
+
+15. Clock Overlay
+
+The user shall be able to enable or disable a clock overlay.
+
+When enabled, the clock shall appear in the bottom-right corner of the screen.
+
+The clock shall:
+
+* Remain readable over light and dark photos.
+* Use a contrasting shadow, translucent background, outline, or similar treatment.
+* Avoid extending beyond the visible screen.
+* Respect display orientation.
+* Appear above slideshow content.
+* Persist while transitions occur.
+
+The user should be able to configure:
+
+* 12-hour or 24-hour time.
+* Whether seconds are shown.
+* Whether the date is shown.
+* Clock size using a small set of presets.
+
+The initial default shall be:
+
+* Clock disabled.
+* Local system time.
+* 12-hour or 24-hour format based on system locale.
+* Seconds hidden.
+* Date hidden.
+
+The application shall use the Raspberry Pi system clock and timezone.
+
+⸻
+
+16. Daily Display Schedule
+
+The user shall be able to configure a daily on/off schedule.
+
+The schedule shall use the same times every day.
+
+The user shall be able to:
+
+* Enable or disable scheduling.
+* Select a daily display-on time.
+* Select a daily display-off time.
+
+When scheduling is disabled, the display shall remain active continuously.
+
+16.1 Off Behavior
+
+At the scheduled off time, the system shall stop displaying photos.
+
+The preferred behavior is to place the HDMI display into a low-power or standby state when supported.
+
+If reliable HDMI standby is not supported by the connected display, the application shall show a fully black screen and stop photo transitions.
+
+The application shall not shut down the Raspberry Pi at the daily display-off time.
+
+16.2 On Behavior
+
+At the scheduled on time, the application shall:
+
+* Wake or re-enable HDMI output when possible.
+* Resume the slideshow.
+* Display a valid photo state without requiring user interaction.
+
+16.3 Overnight Schedules
+
+The schedule shall support overnight ranges.
+
+For example:
+
+* On at 7:00 AM.
+* Off at 11:00 PM.
+
+The system shall correctly determine whether the display should be active after:
+
+* Reboot.
+* Power loss.
+* Application restart.
+* Timezone change.
+* Daylight saving time change.
+
+16.4 Manual Override
+
+The Administration Interface should provide:
+
+* Turn display on now.
+* Turn display off now.
+* Resume schedule.
+
+A manual override should remain active until:
+
+* The next scheduled state change, or
+* The user selects “Resume schedule.”
+
+The selected override behavior shall be clearly indicated.
+
+⸻
+
+17. Slideshow Controls
+
+The Administration Interface should provide basic live controls:
+
+* Next photo or next layout.
+* Previous photo or previous layout.
+* Pause slideshow.
+* Resume slideshow.
+* Turn display on.
+* Turn display off.
+* Reload display.
+
+The Display Interface itself shall not require visible playback controls.
+
+Keyboard shortcuts may be supported for maintenance but are not required for normal use.
+
+⸻
+
+18. Photo Preprocessing
+
+The application should create optimized display derivatives rather than repeatedly loading full-resolution originals.
+
+The system may generate:
+
+* Thumbnails for the Administration Interface.
+* Display-sized images.
+* Blurred-background images.
+* Orientation-corrected versions.
+
+The application shall preserve the original uploaded file unless the user deletes it.
+
+Generated derivatives may be recreated automatically if missing.
+
+Photo preprocessing shall occur:
+
+* After upload.
+* In the background where practical.
+* Without preventing already processed photos from being displayed.
+
+The system shall provide visible status for photos that are still being processed.
+
+⸻
+
+19. EXIF and Rotation Handling
+
+The application shall correctly honor common EXIF orientation metadata.
+
+Photos taken on phones and cameras shall appear upright without requiring manual rotation.
+
+The Administration Interface should provide manual rotation controls:
+
+* Rotate left 90 degrees.
+* Rotate right 90 degrees.
+
+Manual rotation shall persist.
+
+The system may implement rotation as metadata rather than modifying the original image.
+
+⸻
+
+20. Administration Interface Requirements
+
+20.1 General Design
+
+The Administration Interface shall:
+
+* Be lightweight.
+* Use standard browser technologies.
+* Avoid heavyweight frontend frameworks such as React.
+* Be usable on phones, tablets, and desktop computers.
+* Use responsive layouts.
+* Provide clear confirmation for destructive operations.
+* Present errors in plain language.
+
+Suitable implementation approaches include:
+
+* Server-rendered HTML.
+* Web Components.
+* Lightweight templating.
+* Minimal client-side TypeScript.
+* Small purpose-built libraries where needed.
+
+20.2 Primary Navigation
+
+The Administration Interface should contain the following primary areas:
+
+* Photos.
+* Display.
+* Schedule.
+* Status.
+* System.
+
+20.3 Photos Screen
+
+The Photos screen shall allow the user to:
+
+* View folders.
+* Create folders.
+* Rename folders.
+* Delete folders.
+* View folder photo counts.
+* Open folders.
+* Upload photos.
+* View image thumbnails.
+* Select one or more photos.
+* Delete selected photos.
+* Move selected photos.
+* Rotate selected photos.
+* Sort and filter photos.
+
+20.4 Display Settings Screen
+
+The Display Settings screen shall allow the user to configure:
+
+* Selected folders.
+* Photo order.
+* Photo display duration.
+* Transition style.
+* Transition duration.
+* Screen orientation.
+* Single-photo or three-photo layout.
+* Fit, fill, or blurred-background mode.
+* Clock overlay.
+* Clock formatting.
+
+The screen should include a representative layout preview.
+
+20.5 Schedule Screen
+
+The Schedule screen shall allow the user to configure:
+
+* Schedule enabled or disabled.
+* Daily on time.
+* Daily off time.
+* Manual on/off override.
+* Resume schedule.
+
+20.6 Status Screen
+
+The Status screen shall display:
+
+* Application status.
+* Display status.
+* Current displayed photo or photos.
+* Number of eligible photos.
+* Selected folders.
+* Current slideshow mode.
+* Current schedule state.
+* Raspberry Pi hostname.
+* Local IP address.
+* Application version.
+* Operating system information.
+* Available storage.
+* Current uptime.
+* Last restart time.
+* Recent warnings or errors.
+
+20.7 System Screen
+
+The System screen should provide:
+
+* Restart photo-frame application.
+* Restart kiosk display.
+* Reboot Raspberry Pi.
+* Shut down Raspberry Pi.
+* Export configuration.
+* Import configuration.
+* View recent logs.
+* Check for application updates, if update support is implemented.
+
+Reboot and shutdown actions shall require confirmation.
+
+⸻
+
+21. Automatic Startup
+
+The Raspberry Pi shall boot directly into the photo frame.
+
+The startup process shall not require:
+
+* User login.
+* Keyboard input.
+* Mouse input.
+* Opening a terminal.
+* Opening a browser manually.
+
+On boot, the system shall automatically start:
+
+* The backend service.
+* The photo management service.
+* The web administration service.
+* The full-screen display interface.
+* Any required display-control process.
+
+The kiosk browser shall open the local Display Interface automatically.
+
+The mouse cursor shall be hidden when inactive or absent entirely from the Display Interface.
+
+⸻
+
+22. Recovery and Reliability
+
+22.1 Power Loss Recovery
+
+After an unexpected power loss, the system shall:
+
+* Boot automatically when power returns, subject to Raspberry Pi hardware behavior.
+* Start all required services.
+* Restore the most recently saved configuration.
+* Determine whether the display should currently be on or off.
+* Resume slideshow operation without user interaction.
+
+22.2 Service Recovery
+
+The operating system shall automatically restart critical services if they exit unexpectedly.
+
+The application shall detect and recover from:
+
+* Backend process failure.
+* Kiosk browser failure.
+* Display page crash.
+* Temporary image decode failure.
+* Missing photo files.
+* Corrupted generated thumbnails.
+* Temporary storage errors.
+
+A failure involving one photo shall not stop the entire slideshow.
+
+22.3 Configuration Durability
+
+Configuration changes shall be written safely.
+
+The application shall avoid configuration corruption during:
+
+* Power loss.
+* Process termination.
+* Concurrent requests.
+* Partial writes.
+
+The previous valid configuration should remain recoverable if a write fails.
+
+22.4 Database Durability
+
+If a database is used, it shall be suitable for a single-device embedded installation.
+
+The application shall:
+
+* Handle unclean shutdowns.
+* Avoid requiring an external database server.
+* Perform automatic schema migrations.
+* Back up critical metadata before risky migrations.
+
+⸻
+
+23. Performance Requirements
+
+The system shall remain responsive on a Raspberry Pi 4 with reasonable photo library sizes.
+
+Target expectations include:
+
+* Administration pages should begin rendering within two seconds under normal local-network conditions.
+* Slideshow transitions should remain visually smooth at 1080p.
+* The Display Interface should not visibly stall while uploads occur.
+* The application should support at least 10,000 locally stored photos.
+* Thumbnail browsing should use pagination, incremental loading, or virtualization.
+* The application shall not load an entire large photo library into browser memory at once.
+* Memory use shall remain stable during continuous multi-day operation.
+* Image caches shall have defined size limits or cleanup behavior.
+
+4K display support may require reduced transition complexity or pre-scaled assets.
+
+⸻
+
+24. Security Requirements
+
+Although authentication is not required, the application shall:
+
+* Bind only to intended local network interfaces.
+* Avoid opening unnecessary ports.
+* Sanitize filenames and folder names.
+* Prevent directory traversal.
+* Validate uploaded file contents rather than trusting file extensions.
+* Limit upload sizes.
+* Protect ZIP extraction from unsafe paths and decompression bombs.
+* Escape user-visible filenames in HTML.
+* Protect state-changing operations against unintended cross-origin requests.
+* Avoid running the application as the root user where practical.
+* Restrict managed file access to the application’s storage directories.
+
+The system shall not depend on internet-hosted JavaScript, fonts, stylesheets, or other assets for normal operation.
+
+⸻
+
+25. Accessibility and Usability
+
+The Administration Interface shall:
+
+* Use readable text sizes.
+* Provide sufficient contrast.
+* Be usable without precise pointer control.
+* Provide labels for controls.
+* Avoid relying on color alone to communicate status.
+* Provide visible keyboard focus.
+* Support browser zoom.
+* Present confirmation before permanent deletion.
+* Clearly indicate whether settings are saved automatically or require a Save action.
+
+Time controls shall clearly indicate AM/PM when 12-hour format is used.
+
+Potentially confusing terms such as “fit” and “fill” should include visual examples or concise explanations.
+
+⸻
+
+26. Configuration Persistence
+
+The following settings shall persist across reboot:
+
+* Selected folders.
+* Photo ordering.
+* Display duration.
+* Transition style.
+* Transition duration.
+* Screen orientation.
+* Screen layout.
+* Image presentation mode.
+* Clock enabled state.
+* Clock format.
+* Schedule enabled state.
+* Display-on time.
+* Display-off time.
+* Current manual override state, if the design requires it.
+* Hostname or network display name.
+* Storage and cache settings.
+
+Configuration should be exportable to a file for backup.
+
+Importing configuration shall validate the file before replacing the current configuration.
+
+Photo files do not need to be included in the basic configuration export.
+
+⸻
+
+27. Logging and Diagnostics
+
+The application shall maintain local logs for:
+
+* Application startup.
+* Application shutdown.
+* Configuration changes.
+* Upload failures.
+* Image processing failures.
+* Missing files.
+* Display restart events.
+* Schedule transitions.
+* Storage warnings.
+* Database errors.
+* Unexpected process exits.
+
+Logs shall:
+
+* Use timestamps.
+* Rotate automatically.
+* Have a maximum retained size or age.
+* Avoid filling the Raspberry Pi storage.
+* Be viewable or downloadable through the Administration Interface.
+
+The Display Interface shall not expose technical errors during normal operation.
+
+⸻
+
+28. Updates and Maintenance
+
+The initial release may use a manual software update process.
+
+The deployment shall document how to:
+
+* Install the application.
+* Upgrade the application.
+* Roll back an unsuccessful upgrade.
+* Back up configuration and metadata.
+* Restore configuration and metadata.
+* Rebuild generated photo caches.
+* Reinstall the kiosk service.
+* Diagnose startup failures.
+
+Application updates shall not delete uploaded photos or reset configuration.
+
+A future version may support update installation from the Administration Interface.
+
+⸻
+
+29. Typical Photo Frame Features Included
+
+The following commonly expected photo-frame capabilities are included in the initial requirements:
+
+* Random or ordered playback.
+* Automatic EXIF orientation correction.
+* Manual photo rotation.
+* Multiple selected folders.
+* Full-screen kiosk operation.
+* Display scheduling.
+* Clock and optional date overlay.
+* Fit and fill presentation.
+* Blurred-background presentation.
+* Single-photo and multi-photo layouts.
+* Manual next, previous, pause, and resume controls.
+* Storage monitoring.
+* Automatic recovery after reboot or failure.
+* Thumbnail-based photo management.
+
+⸻
+
+30. Optional Future Features
+
+The following features may be considered after the initial release:
+
+* ZIP upload.
+* Per-folder display duration.
+* Per-folder ordering.
+* Folder weighting in random mode.
+* Favorite or hidden-photo flags.
+* Captions based on filename or EXIF data.
+* Photo capture date overlay.
+* Transition randomization.
+* Seasonal folder schedules.
+* Day-of-week schedules.
+* Multiple daily on/off periods.
+* Automatic display resolution detection.
+* Automatic display rotation detection.
+* Remote update installation.
+* Local network authentication.
+* Multiple administrator accounts.
+* Touchscreen controls.
+* Motion-sensor wake behavior.
+* Ambient-light-based brightness.
+* HDMI-CEC display power control.
+* Photo export and backup.
+* Network-attached storage.
+* Cloud photo providers.
+* Video support.
+
+⸻
+
+31. Technical Constraints
+
+The implementation shall comply with the following constraints:
+
+* Primary application code shall be written in TypeScript.
+* The web client shall not use heavyweight frameworks such as React.
+* The application shall run locally on the Raspberry Pi.
+* The application shall not require a hosted cloud backend.
+* The application shall not require internet access during normal operation.
+* Photo storage shall remain on the Raspberry Pi.
+* The data layer shall not require a separately managed database server.
+* The display shall use a browser-based or equivalent locally rendered interface suitable for kiosk operation.
+* The application shall support unattended startup and recovery.
+
+Lightweight libraries and frameworks may be used where they reduce complexity without imposing significant runtime overhead.
+
+⸻
+
+32. Initial Release Priorities
+
+32.1 Required for Initial Release
+
+* Raspberry Pi 4 and 5 support.
+* Automatic unattended startup.
+* Full-screen kiosk display.
+* Local web administration.
+* Folder creation and management.
+* Multi-file photo upload.
+* Photo deletion and movement.
+* Selection of one or more folders.
+* Single-photo layout.
+* Fixed three-photo layout.
+* Landscape and portrait orientation.
+* Fit presentation.
+* Fill presentation.
+* Fit with blurred background.
+* Configurable photo duration.
+* Configurable transitions.
+* Clock overlay.
+* Daily on/off schedule.
+* Automatic recovery after power loss.
+* Storage status.
+* Basic diagnostics and logs.
+
+32.2 Desirable for Initial Release
+
+* ZIP upload.
+* Manual photo rotation.
+* Drag-and-drop upload.
+* Live next, previous, pause, and resume controls.
+* HDMI display standby or wake control.
+* Photo preprocessing and caching.
+* Current-display status in the Administration Interface.
+
+32.3 Nice to Have
+
+* HEIC support.
+* Automatic software updates.
+* Advanced EXIF date ordering.
+* HDMI-CEC power control.
+* Date overlay.
+* Configurable clock size.
+* Configuration export and import.
+
+
+⸻
+
+33. Acceptance Criteria
+
+The initial release shall be considered functionally complete when the following scenarios succeed.
+
+33.1 First Boot
+
+1. The Raspberry Pi powers on.
+2. The operating system starts without user input.
+3. The application services start automatically.
+4. The kiosk display opens automatically.
+5. The photo frame shows either selected photos or a clear setup message.
+
+33.2 Photo Upload and Display
+
+1. The user opens the administration page from another local device.
+2. The user creates a folder.
+3. The user uploads multiple photos.
+4. The user selects the folder for display.
+5. The photos begin appearing on the HDMI display.
+6. The system remains usable during upload and image processing.
+
+33.3 Multiple Folders
+
+1. The user creates at least two folders.
+2. The user uploads photos to both.
+3. The user enables both folders.
+4. Photos from both folders appear in the slideshow.
+5. Disabling one folder removes its photos from future slideshow selections.
+
+33.4 Layouts
+
+1. The user selects single-photo layout.
+2. One photo appears at a time.
+3. The user selects three-photo layout.
+4. One large and two small photo regions appear.
+5. No photo appears in two regions simultaneously when at least three photos are available.
+
+33.5 Orientation
+
+1. The user selects landscape orientation.
+2. The display and three-photo layout use the landscape arrangement.
+3. The user selects portrait orientation.
+4. The display and layout use the portrait arrangement.
+5. The selected orientation persists after reboot.
+
+33.6 Image Presentation
+
+1. In Fit mode, the full photo is visible without cropping.
+2. In Fill mode, the photo fills the region and may be cropped.
+3. In Fit with Blurred Background mode, the complete photo is shown over a blurred full-region background.
+4. Each mode works in both layouts and orientations.
+
+33.7 Clock
+
+1. The user enables the clock.
+2. The clock appears in the bottom-right corner.
+3. The clock remains readable over different photos.
+4. The clock remains visible during transitions.
+5. Disabling the clock removes it.
+
+33.8 Scheduling
+
+1. The user configures a daily on and off time.
+2. The display turns off or becomes black at the configured off time.
+3. The slideshow resumes at the configured on time.
+4. The schedule works across midnight where applicable.
+5. The correct scheduled state is restored after reboot.
+
+33.9 Power Loss
+
+1. Power is removed unexpectedly.
+2. Power is restored.
+3. The Raspberry Pi boots automatically.
+4. The application starts without input.
+5. The previous configuration remains intact.
+6. The slideshow resumes in the correct scheduled state.
+
+33.10 Failure Recovery
+
+1. The kiosk browser or application process is terminated.
+2. The system restarts the failed component automatically.
+3. The slideshow resumes without manual intervention.
+4. A diagnostic event is recorded.
+
+33.11 Local-Only Operation
+
+1. Internet access is unavailable.
+2. The Raspberry Pi and administration device remain on the same local network.
+3. The administration interface remains accessible.
+4. The slideshow continues operating normally.
+
+⸻
+
+34. Summary
+
+The Digital Picture Frame shall provide a lightweight, reliable, locally managed photo display appliance for Raspberry Pi 4 and Raspberry Pi 5 systems.
+
+Its defining characteristics are:
+
+* Automatic boot into a full-screen slideshow.
+* Local browser-based administration.
+* Local-only photo storage.
+* Folder-based photo organization and selection.
+* Landscape and portrait operation.
+* One-photo and fixed three-photo layouts.
+* Fit, fill, and blurred-background presentation.
+* Configurable slideshow timing and transitions.
+* Optional bottom-right clock.
+* Daily display scheduling.
+* Automatic recovery after power loss or component failure.
+* A TypeScript implementation without heavyweight browser frameworks.

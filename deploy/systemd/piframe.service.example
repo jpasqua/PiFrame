@@ -1,0 +1,18 @@
+[Unit]
+Description=PiFrame local picture frame service
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=pi
+WorkingDirectory=/opt/piframe
+Environment=PIFRAME_HOST=127.0.0.1
+Environment=PIFRAME_PORT=3040
+Environment=PIFRAME_PLATFORM=raspberry-pi
+ExecStart=/usr/bin/npm start
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,5 @@
+[Desktop Entry]
+Type=Application
+Name=PiFrame Kiosk
+Exec=chromium --kiosk --app=http://127.0.0.1:3040/display --noerrdialogs --disable-session-crashed-bubble
+X-GNOME-Autostart-enabled=true
