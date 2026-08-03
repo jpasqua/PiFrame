@@ -1,55 +1,26 @@
 # PiFrame
 
-PiFrame is a local-first Raspberry Pi digital picture frame built with Node.js, TypeScript, and SQLite. It is designed to run on Raspberry Pi 4/5 in Chromium kiosk mode while remaining easy to develop on macOS with Pi-specific behavior isolated behind adapters.
+PiFrame is a local-first digital picture frame built with Node.js, TypeScript, SQLite, and Sharp. It runs as a lightweight local web application: the owner workspace manages albums and display settings, while `/display` is the Chromium-kiosk-friendly slideshow view.
 
-## Current status
+## Current Features
 
-This repository currently contains:
-
-* An initial technical design
-* A lightweight Node.js and TypeScript server
-* SQLite bootstrap and first-run schema migration
-* Managed storage directory creation under `data/`
-* SQLite-backed album administration
-* Single-image upload with byte-level image validation and managed original-file storage
-* Explicit duplicate filename choices: keep both, replace, or skip
-* Per-album photo library views with persisted image metadata
-* Background thumbnail and display-derivative generation with durable processing status
-* A basic full-screen slideshow using only ready display derivatives
-* Explicit display settings for source albums, photo duration, and image fit/fill mode
-* Per-photo non-destructive rotation controls with automatic derivative regeneration
-* Ready-image thumbnail previews and confirmed photo deletion from the library
-* Single or three-photo slideshow layouts with configurable ordering
-* A daily schedule with force-on/force-off overrides and black-screen off behavior
-* Optional local clock overlay with configurable format, size, date, and seconds
-* A unified owner workspace at the homepage, with sidebar views for Dashboard, General, Display, Schedule, Albums, and System Status
-* An About dialog available from the PiFrame logo on every page
-* Inline album rename plus two-confirmation album deletion that removes every contained photo and managed file
-* Default display and schedule settings bootstrap
-* Basic system status and event reporting in the unified workspace
-
-## Architectural direction
-
-The initial release is being built in this order:
-
-1. Photo storage and metadata correctness
-2. Background preprocessing and derivatives
-3. Slideshow/display as a consumer of prepared assets
-
-## Planned stack
-
-* Runtime: Node.js
-* Language: TypeScript
-* Database: SQLite via `better-sqlite3`
-* Served UI: lightweight HTML/CSS/TypeScript
-* Target kiosk: Chromium on Raspberry Pi OS
-
-## Build, run, test
+* SQLite-backed albums and managed photo storage
+* Unified owner workspace with Dashboard, General, Display, Schedule, Albums, and System Status views
+* Album creation, renaming, and two-step deletion that removes contained photos and managed assets
+* Album detail pages with a batch upload queue, Detail and Grid photo views, rotation, retry, and deletion actions
+* Multi-file image upload for JPEG, PNG, WebP, GIF, TIFF, AVIF, and HEIF files up to 25 MB each
+* Queue-side duplicate decisions using a three-option pill group: Keep both, Replace, or Skip
+* Background generation of thumbnails and display derivatives; incomplete work resumes at startup and failed work can be retried
+* Non-destructive rotation preserved as photo metadata and reflected in regenerated derivatives
+* Full-screen slideshow with album selection, ordering, one- or three-photo layouts, fit/fill sizing, daily schedule, black-screen off mode, and optional clock overlay
+* Local health endpoint, durable system events, and stale upload staging cleanup
+* Pi deployment templates for a loopback-only systemd service and Chromium kiosk autostart
 
 ## Requirements
 
 * Node.js 22 or newer
 * npm 10 or newer
+* Native build tooling supported by `better-sqlite3` and `sharp` when a prebuilt binary is not available
 
 ## Install
 
@@ -57,130 +28,115 @@ The initial release is being built in this order:
 npm install
 ```
 
-## Run in development
+## Build, Run, and Test
+
+### Development
 
 ```bash
 npm run dev
 ```
 
-If you want automatic restart on file changes, use:
+For automatic restart while editing source files:
 
 ```bash
 npm run dev:watch
 ```
 
-By default the app uses:
+Open the owner workspace at [http://127.0.0.1:3040](http://127.0.0.1:3040). Open the frame view at [http://127.0.0.1:3040/display](http://127.0.0.1:3040/display).
 
-* Host: `127.0.0.1` (local-only)
-* Port: `3040`
-* Data root: `./data`
+By default, PiFrame uses `127.0.0.1`, port `3040`, and the local `./data` directory. It intentionally does not bind to `0.0.0.0`.
 
 Useful environment variables:
 
-* `PIFRAME_HOST` (defaults to `127.0.0.1`; use `localhost` or `127.0.0.1` for local-only access)
-* `PIFRAME_PORT`
-* `PIFRAME_DATA_ROOT`
-* `PIFRAME_PLATFORM` with `desktop` or `raspberry-pi`
+* `PIFRAME_HOST` defaults to `127.0.0.1`
+* `PIFRAME_PORT` defaults to `3040`
+* `PIFRAME_DATA_ROOT` defaults to `./data`
+* `PIFRAME_PLATFORM` accepts `desktop` or `raspberry-pi`
 
 Example:
 
 ```bash
-PIFRAME_HOST=127.0.0.1 PIFRAME_PORT=3040 npm run dev
+PIFRAME_HOST=127.0.0.1 PIFRAME_PORT=3040 npm run dev:watch
 ```
 
-Development mode uses Node with the `tsx` loader so the `.ts` source runs directly while the codebase keeps `.js` import specifiers for the compiled `dist/` output.
-
-## Build for production
+### Production Build
 
 ```bash
 npm run build
-```
-
-This compiles TypeScript into `dist/`.
-
-## Run the built server
-
-```bash
 npm start
 ```
 
-## Raspberry Pi kiosk templates
+`npm run build` writes compiled JavaScript to `dist/`; `npm start` runs that output.
 
-The repository includes deployment templates, but does not install or enable anything automatically:
-
-* `deploy/systemd/piframe.service.example` runs the built server as the `pi` user on loopback only.
-* `deploy/autostart/piframe-kiosk.desktop.example` starts Chromium in kiosk mode at `/display` when the desktop session starts.
-
-Before using them on a Pi, update the service `WorkingDirectory` and `User` if your installation differs from `/opt/piframe` and `pi`. Confirm Chromium's executable name with `command -v chromium`; some Raspberry Pi OS versions use `chromium-browser` instead.
-
-## Test and verification
-
-There is not a full automated test suite yet. For now, the main verification commands are:
+### Verification
 
 ```bash
 npm run check
 npm run build
 ```
 
-What they do:
+`npm run check` performs a TypeScript typecheck without writing output. There is not yet an automated test suite, so also perform these manual smoke checks:
 
-* `npm run check` runs the TypeScript typecheck without emitting files.
-* `npm run build` performs a full compile into `dist/`.
+* Open `/health`, `/`, and `/display`.
+* Create, rename, and delete a test album.
+* Upload several supported images to an album and confirm each reaches `ready`.
+* Add an already-used filename to the queue; select Keep both, Replace, or Skip before uploading.
+* Rotate a ready photo and confirm both its thumbnail and slideshow image update.
+* Toggle the schedule or force-off setting and confirm `/display` becomes black.
 
-Manual smoke checks once the server is running:
+## Storage and Processing
 
-* `GET /health`
-* `GET /` (the primary workspace; Dashboard is the default view)
-* `GET /admin/folders`
-* `GET /admin/settings` (redirects to the primary workspace)
-* `GET /admin/status` (redirects to the System Status workspace view)
-* `GET /admin/display`
-* `GET /admin/schedule`
-* `GET /display`
-* Create an album, open it, and upload a JPEG, PNG, WebP, GIF, TIFF, AVIF, or HEIF image no larger than 25 MB
-* Upload the same displayed filename again and verify the explicit conflict decision screen
+PiFrame creates its managed data directory on first start:
 
-Expected behavior:
+```text
+data/
+  app.db
+  originals/
+  derived/
+    thumbnails/
+    display/
+    blurred/
+  logs/
+  tmp/
+```
 
-* `data/` is created automatically on first run
-* `data/app.db` is initialized automatically
-* album create, rename, and delete actions persist in SQLite
-* uploaded original bytes are stored under `data/originals/` and associated metadata is stored in SQLite
-* duplicate filenames are never silently overwritten
-* successful uploads move from `pending` to `ready` after derivatives are generated; pending work is resumed when the server starts
-* display settings persist after saving and affect `/display` on its next photo refresh
-* saving a photo rotation preserves the original upload and refreshes its display assets
-* deleting a photo removes its SQLite record, managed original, and generated derivatives
-* deleting an album requires two confirmations and removes the album plus all contained photos and managed files
-* a forced-off schedule makes `/display` black within five seconds; scheduled times use the host machine's local time
-* recent album actions appear on the status page
+Original uploads are retained separately from generated assets. Generated thumbnails and display images are rebuildable. The `tmp/` directory is used to stage streamed uploads; stale staged files are periodically cleaned up.
 
-## Repository highlights
+## Raspberry Pi Kiosk Templates
 
-* `src/server.ts` starts the HTTP server
-* `src/config.ts` loads config and prepares managed directories
-* `src/data/` contains SQLite bootstrap and repositories
-* `src/core/` contains domain validation and default settings
-* `src/web/app.ts` contains the current admin and status routes
-* `docs/technical-design.md` captures the current architecture and milestone plan
+The repository includes templates but does not install or enable them automatically:
 
-## Current routes
+* `deploy/systemd/piframe.service.example` runs the built server as the `pi` user on loopback.
+* `deploy/autostart/piframe-kiosk.desktop.example` starts Chromium in kiosk mode at `/display`.
+
+Before using them, update `WorkingDirectory` and `User` for the target Pi. Confirm the Chromium executable with `command -v chromium`; some Raspberry Pi OS versions use `chromium-browser`.
+
+## Project Layout
+
+* `src/config.ts` loads configuration and creates managed directories.
+* `src/data/` owns SQLite migrations and repositories.
+* `src/core/` contains validation and display/schedule defaults.
+* `src/services/` handles ingestion, derivative generation, and recovery work.
+* `src/web/app.ts` currently contains HTTP routing and server-rendered workspace/display UI.
+* `docs/technical-design.md` describes the architecture and deployment direction.
+
+## Tasks
+
+The first four high-priority code-review findings have been addressed: streamed uploads, recoverable processing failures, staged-upload cleanup, and safer upload error handling. Remaining review follow-ups are:
+
+* Extract the owner workspace markup, styles, and upload-queue client behavior from `src/web/app.ts` into focused modules. The current single-file rendering approach makes UI changes harder to reason about and test.
+* Add automated unit and integration coverage for repositories, upload/duplicate decisions, image processing failures and retries, rotation, and slideshow selection.
+* Add a reconciliation routine for the database and managed filesystem so interrupted file/database operations can be detected and repaired safely.
+* Define an authentication and authorization model before enabling non-loopback administration access. Current origin checks help prevent cross-origin form submissions but are not user authentication.
+* Add an operational backup and restore procedure for `data/app.db` and original uploads, including a documented upgrade/migration path.
+* Complete Raspberry Pi operational work: installer guidance, kiosk recovery, true HDMI standby, and device-level diagnostics.
+
+## Current Routes
 
 * `/health`
-* `/` (unified workspace; Dashboard is the default view)
-* `/admin/folders`
-* `/admin/settings` (redirects to `/`)
-* `/admin/folders/:folderId/photos`
-* `/admin/status` (redirects to `/?view=status`)
-* `/admin/display`
-* `/admin/schedule`
-* `/display`
-* `/api/display/next`
+* `/` - owner workspace
+* `/admin/folders/:folderId/photos` - album detail
+* `/display` - kiosk slideshow
+* `/api/display/next` - slideshow photo selection API
 * `/media/thumbnail/:photoId.jpg`
 * `/media/display/:photoId.jpg`
-
-## Next steps
-
-1. Add photo metadata editing beyond rotation
-2. Add configurable transitions and clock overlays
-3. Add Raspberry Pi kiosk startup and service installation guidance
