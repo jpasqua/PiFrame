@@ -122,9 +122,8 @@ Before using them, update `WorkingDirectory` and `User` for the target Pi. Confi
 
 ## Tasks
 
-The first four high-priority code-review findings have been addressed: streamed uploads, recoverable processing failures, staged-upload cleanup, and safer upload error handling. Remaining review follow-ups are:
+The first five high-priority code-review findings have been addressed: streamed uploads, recoverable processing failures, staged-upload cleanup, safer upload error handling, and splitting the web application into route, view, shared HTTP, and static asset modules. Remaining review follow-ups are:
 
-* Extract the owner workspace markup, styles, and upload-queue client behavior from `src/web/app.ts` into focused modules. The current single-file rendering approach makes UI changes harder to reason about and test.
 * Add automated unit and integration coverage for repositories, upload/duplicate decisions, image processing failures and retries, rotation, and slideshow selection.
 * Add a reconciliation routine for the database and managed filesystem so interrupted file/database operations can be detected and repaired safely.
 * Define an authentication and authorization model before enabling non-loopback administration access. Current origin checks help prevent cross-origin form submissions but are not user authentication.

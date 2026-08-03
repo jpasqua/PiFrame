@@ -4,13 +4,13 @@ import { resolve } from "node:path";
 import type { AppContext } from "../../data/app-context.js";
 import { prefersHtml } from "../http/request.js";
 import { sendBinary, sendHtml, sendJson, sendPlainText } from "../http/responses.js";
+import { renderHealthPage } from "../views/system.js";
 
 export async function handleSystemRoute(
   context: AppContext,
   req: IncomingMessage,
   res: ServerResponse,
-  url: URL,
-  renderHealthPage: (context: AppContext) => string
+  url: URL
 ): Promise<boolean> {
   if (req.method === "GET" && url.pathname === "/health") {
     if (prefersHtml(req)) {

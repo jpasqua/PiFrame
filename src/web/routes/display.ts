@@ -3,13 +3,13 @@ import { createDefaultDisplaySettings, createDefaultScheduleSettings, type Displ
 import type { AppContext } from "../../data/app-context.js";
 import { isDisplayOn, selectDisplayPhotos } from "../display-state.js";
 import { sendHtml, sendJson } from "../http/responses.js";
+import { renderDisplayPage } from "../views/display.js";
 
 export function handleDisplayRoute(
   context: AppContext,
   req: IncomingMessage,
   res: ServerResponse,
-  url: URL,
-  renderDisplayPage: (settings: DisplaySettings) => string
+  url: URL
 ): boolean {
   if (req.method === "GET" && url.pathname === "/display") {
     const settings = context.settings.getJson<DisplaySettings>("display") ?? createDefaultDisplaySettings();
