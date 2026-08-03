@@ -1,4 +1,28 @@
+# Dependencies and build output
 node_modules/
 dist/
+
+# PiFrame runtime data
 data/
+logs/
+
+# Local environment and diagnostics
+.env
+.env.*
+!.env.example
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+*.pid
+*.pid.lock
+
+# Test and TypeScript artifacts
+coverage/
+.nyc_output/
+*.lcov
+*.tsbuildinfo
+
+# OS and editor artifacts
 .DS_Store
+.vscode-test/
