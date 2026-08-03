@@ -1,24 +1,22 @@
-import { Buffer } from "node:buffer";
-import { randomUUID } from "node:crypto";
-import { createWriteStream } from "node:fs";
 import { readFile, rm } from "node:fs/promises";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { resolve } from "node:path";
-import { parse as parseQueryString } from "node:querystring";
-import { pipeline } from "node:stream/promises";
-import Busboy from "busboy";
-import Database from "better-sqlite3";
 import { createDefaultDisplaySettings, createDefaultScheduleSettings, type DisplaySettings, type ScheduleSettings } from "../core/settings.js";
 import { validateFolderName } from "../core/folders.js";
 import type { AppContext } from "../data/app-context.js";
 import type { PhotoRecord } from "../data/photo-repository.js";
-import { MAX_UPLOAD_SIZE_BYTES, PhotoIngestionService, type StagedUpload, type StreamedUploadFile } from "../services/photo-ingestion.js";
+import { PhotoIngestionService, type StagedUpload } from "../services/photo-ingestion.js";
+import { isUniqueConstraintError } from "./http/errors.js";
+import { readForm, readMultipartUpload, requireFormValue } from "./http/forms.js";
+import { isTrustedOrigin, prefersHtml, prefersJson } from "./http/request.js";
+import { redirect, sendBinary, sendHtml, sendJson, sendPlainText } from "./http/responses.js";
+import { isDisplayOn, selectDisplayPhotos } from "./display-state.js";
+import { handleDisplayRoute } from "./routes/display.js";
+import { escapeHtml, formatBytes, formatTimestamp, readFlash, renderFlash, renderLogo, type FlashMessage } from "./views/shared.js";
 
 interface App {
   handle(req: IncomingMessage, res: ServerResponse): void;
 }
-
-const MAX_FORM_SIZE_BYTES = 32 * 1024;
 
 export function createApp(context: AppContext): App {
   const ingestion = new PhotoIngestionService(context.config, context.photos);
@@ -48,33 +46,7 @@ export function createApp(context: AppContext): App {
         }
       }
 
-      if (method === "GET" && url.pathname === "/display") {
-        const settings = context.settings.getJson<DisplaySettings>("display") ?? createDefaultDisplaySettings();
-        return sendHtml(res, 200, renderDisplayPage(settings));
-      }
-
-      if (method === "GET" && url.pathname === "/api/display/next") {
-        const settings = context.settings.getJson<DisplaySettings>("display") ?? createDefaultDisplaySettings();
-        const schedule = context.settings.getJson<ScheduleSettings>("schedule") ?? createDefaultScheduleSettings();
-        if (!isDisplayOn(schedule, new Date())) {
-          return sendJson(res, 200, { displayOn: false, photo: null, photos: [] });
-        }
-        const eligible = context.photos.listReady().filter((photo) => {
-          return settings.selectedFolderIds.length === 0 || settings.selectedFolderIds.includes(photo.folderId);
-        });
-        const after = url.searchParams.get("after");
-        const selections = selectDisplayPhotos(eligible, settings, after);
-        const photos = selections.map((photo) => ({
-          id: photo.id,
-          alt: photo.originalFilename,
-          src: `/media/display/${photo.id}.jpg?v=${encodeURIComponent(photo.updatedAt)}`
-        }));
-        return sendJson(res, 200, {
-          displayOn: true,
-          photo: photos[0] ?? null,
-          photos
-        });
-      }
+      if (handleDisplayRoute(context, req, res, url, renderDisplayPage)) return;
 
       const mediaMatch = url.pathname.match(/^\/media\/(thumbnail|display)\/([0-9a-f-]{36})\.jpg$/);
       if (method === "GET" && mediaMatch) {
@@ -513,40 +485,6 @@ export function createApp(context: AppContext): App {
   };
 }
 
-function sendJson(res: ServerResponse, statusCode: number, body: unknown): void {
-  const payload = JSON.stringify(body, null, 2);
-  res.writeHead(statusCode, {
-    "content-type": "application/json; charset=utf-8",
-    "content-length": Buffer.byteLength(payload)
-  });
-  res.end(payload);
-}
-
-function sendHtml(res: ServerResponse, statusCode: number, body: string): void {
-  res.writeHead(statusCode, {
-    "content-type": "text/html; charset=utf-8",
-    "content-length": Buffer.byteLength(body)
-  });
-  res.end(body);
-}
-
-function sendBinary(res: ServerResponse, statusCode: number, body: Buffer, contentType: string): void {
-  res.writeHead(statusCode, {
-    "content-type": contentType,
-    "content-length": body.length,
-    "cache-control": "private, max-age=3600"
-  });
-  res.end(body);
-}
-
-function sendPlainText(res: ServerResponse, statusCode: number, body: string): void {
-  res.writeHead(statusCode, {
-    "content-type": "text/plain; charset=utf-8",
-    "content-length": Buffer.byteLength(body)
-  });
-  res.end(body);
-}
-
 function renderDisplayPage(settings: DisplaySettings): string {
   const durationMs = Math.max(1_000, Math.round(settings.photoDurationSeconds * 1_000));
   const presentation = settings.imagePresentationMode === "fill" ? "cover" : "contain";
@@ -675,11 +613,6 @@ function renderDisplayPage(settings: DisplaySettings): string {
     </script>
   </body>
 </html>`;
-}
-
-function redirect(res: ServerResponse, location: string): void {
-  res.writeHead(303, { location });
-  res.end();
 }
 
 function renderHomePage(context: AppContext): string {
@@ -1436,226 +1369,6 @@ function renderNotFoundPage(pathname: string): string {
 </html>`;
 }
 
-function renderFlash(flash: FlashMessage): string {
-  if (!flash.message || !flash.kind) {
-    return "";
-  }
-
-  return `<div class="flash ${flash.kind}" style="transition:opacity .35s ease">${escapeHtml(flash.message)}</div><script>const flash=document.currentScript.previousElementSibling;const flashUrl=new URL(window.location.href);flashUrl.searchParams.delete("success");flashUrl.searchParams.delete("error");history.replaceState(null,"",flashUrl);window.setTimeout(()=>{flash.style.opacity="0";window.setTimeout(()=>flash.remove(),350);},10000);</script>`;
-}
-
-function readFlash(url: URL): FlashMessage {
-  const success = url.searchParams.get("success");
-  if (success) {
-    return { kind: "success", message: success };
-  }
-
-  const error = url.searchParams.get("error");
-  if (error) {
-    return { kind: "error", message: error };
-  }
-
-  return { kind: null, message: null };
-}
-
-async function readForm(req: IncomingMessage): Promise<Record<string, string>> {
-  const contentType = req.headers["content-type"] ?? "";
-  if (!contentType.startsWith("application/x-www-form-urlencoded")) {
-    throw new Error("Unsupported form content type.");
-  }
-
-  const body = await readRequestBody(req, MAX_FORM_SIZE_BYTES);
-  const parsed = parseQueryString(body.toString("utf8"));
-  const result: Record<string, string> = {};
-
-  for (const [key, value] of Object.entries(parsed)) {
-    result[key] = Array.isArray(value) ? String(value[0] ?? "") : String(value ?? "");
-  }
-
-  return result;
-}
-
-async function readMultipartUpload(
-  req: IncomingMessage,
-  tempDir: string
-): Promise<{ fields: Record<string, string>; file: StreamedUploadFile | null }> {
-  return new Promise((resolvePromise, rejectPromise) => {
-    const fields: Record<string, string> = {};
-    let file: StreamedUploadFile | null = null;
-    let hasFile = false;
-    let temporaryPath: string | null = null;
-    let writeTask: Promise<void> | null = null;
-    let parserError: Error | null = null;
-
-    const fail = async (error: Error): Promise<void> => {
-      if (temporaryPath) {
-        await rm(temporaryPath, { force: true });
-      }
-      rejectPromise(error);
-    };
-
-    let parser: ReturnType<typeof Busboy>;
-    try {
-      parser = Busboy({
-        headers: req.headers,
-        limits: {
-          files: 1,
-          fields: 8,
-          fieldSize: MAX_FORM_SIZE_BYTES,
-          fileSize: MAX_UPLOAD_SIZE_BYTES + 1
-        }
-      });
-    } catch {
-      rejectPromise(new Error("Unsupported upload form encoding."));
-      return;
-    }
-
-    parser.on("field", (name, value) => {
-      fields[name] = value;
-    });
-    parser.on("fieldsLimit", () => {
-      parserError = new Error("Too many upload fields.");
-    });
-    parser.on("filesLimit", () => {
-      parserError = new Error("Upload one image at a time.");
-    });
-    parser.on("file", (name, stream, info) => {
-      if (name !== "photo" || hasFile) {
-        parserError = new Error("Upload one image at a time.");
-        stream.resume();
-        return;
-      }
-
-      hasFile = true;
-      const tempBasename = `${randomUUID()}.upload`;
-      temporaryPath = resolve(tempDir, tempBasename);
-      let fileSizeBytes = 0;
-      let limitReached = false;
-      stream.on("data", (chunk: Buffer) => {
-        fileSizeBytes += chunk.length;
-      });
-      stream.on("limit", () => {
-        limitReached = true;
-      });
-      writeTask = pipeline(stream, createWriteStream(temporaryPath, { flags: "wx" })).then(() => {
-        if (limitReached || fileSizeBytes > MAX_UPLOAD_SIZE_BYTES) {
-          throw new Error("Images must be 25 MB or smaller.");
-        }
-        file = {
-          filename: info.filename,
-          contentType: info.mimeType,
-          tempBasename,
-          fileSizeBytes
-        };
-      });
-    });
-    parser.once("error", (error) => {
-      parserError = error instanceof Error ? error : new Error("Could not read upload.");
-    });
-    parser.once("finish", async () => {
-      try {
-        await writeTask;
-        if (parserError) {
-          throw parserError;
-        }
-        resolvePromise({ fields, file });
-      } catch (error) {
-        await fail(error instanceof Error ? error : new Error("Could not read upload."));
-      }
-    });
-    req.pipe(parser);
-  });
-}
-
-function readRequestBody(req: IncomingMessage, maxBytes: number): Promise<Buffer> {
-  return new Promise((resolve, reject) => {
-    const chunks: Buffer[] = [];
-    let totalBytes = 0;
-
-    req.on("data", (chunk: Buffer | string) => {
-      const buffer = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
-      totalBytes += buffer.length;
-
-      if (totalBytes > maxBytes) {
-        reject(new Error("Request body too large."));
-        req.destroy();
-        return;
-      }
-
-      chunks.push(buffer);
-    });
-
-    req.on("end", () => {
-      resolve(Buffer.concat(chunks));
-    });
-
-    req.on("error", reject);
-  });
-}
-
-function requireFormValue(form: Record<string, string>, key: string): string {
-  const value = form[key]?.trim();
-  if (!value) {
-    throw new Error(`Missing form value: ${key}`);
-  }
-
-  return value;
-}
-
-function prefersHtml(req: IncomingMessage): boolean {
-  return req.headers.accept?.includes("text/html") ?? false;
-}
-
-function prefersJson(req: IncomingMessage): boolean {
-  return req.headers.accept?.includes("application/json") ?? false;
-}
-
-function isTrustedOrigin(req: IncomingMessage): boolean {
-  const origin = req.headers.origin;
-  const host = req.headers.host;
-
-  if (!host) {
-    return false;
-  }
-
-  if (!origin) {
-    return true;
-  }
-
-  try {
-    const originUrl = new URL(origin);
-    return originUrl.host === host;
-  } catch {
-    return false;
-  }
-}
-
-function isUniqueConstraintError(error: unknown): boolean {
-  if (!(error instanceof Database.SqliteError)) {
-    return false;
-  }
-
-  return "code" in error && error.code === "SQLITE_CONSTRAINT_UNIQUE";
-}
-
-function formatTimestamp(isoTimestamp: string): string {
-  const date = new Date(isoTimestamp);
-  return new Intl.DateTimeFormat("en-US", {
-    dateStyle: "medium",
-    timeStyle: "short"
-  }).format(date);
-}
-
-function formatBytes(bytes: number): string {
-  if (bytes < 1024) {
-    return `${bytes.toString()} B`;
-  }
-  if (bytes < 1024 * 1024) {
-    return `${(bytes / 1024).toFixed(1)} KB`;
-  }
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-}
-
 function parseDisplayDuration(raw: string | undefined, fallback: number): number {
   if (raw === undefined || raw.trim() === "") {
     return fallback;
@@ -1749,104 +1462,10 @@ function parseScheduleOverride(raw: string | undefined): ScheduleSettings["overr
   throw new Error("Choose a valid schedule override.");
 }
 
-function isDisplayOn(settings: ScheduleSettings, now: Date): boolean {
-  if (settings.overrideState === "force-on") {
-    return true;
-  }
-  if (settings.overrideState === "force-off") {
-    return false;
-  }
-  if (!settings.enabled) {
-    return true;
-  }
-  const currentMinutes = now.getHours() * 60 + now.getMinutes();
-  const onMinutes = timeOfDayToMinutes(settings.dailyOnTime);
-  const offMinutes = timeOfDayToMinutes(settings.dailyOffTime);
-  if (onMinutes === offMinutes) {
-    return true;
-  }
-  return onMinutes < offMinutes
-    ? currentMinutes >= onMinutes && currentMinutes < offMinutes
-    : currentMinutes >= onMinutes || currentMinutes < offMinutes;
-}
-
-function timeOfDayToMinutes(value: string): number {
-  const [hours, minutes] = value.split(":").map(Number);
-  return (hours ?? 0) * 60 + (minutes ?? 0);
-}
-
-function selectDisplayPhotos(
-  photos: PhotoRecord[],
-  settings: DisplaySettings,
-  afterId: string | null
-): PhotoRecord[] {
-  if (photos.length === 0) {
-    return [];
-  }
-  const count = settings.screenLayout === "triple" ? 3 : 1;
-  if (settings.orderMode === "random") {
-    return selectRandomPhotos(photos, count, afterId);
-  }
-  const ordered = [...photos].sort((left, right) => compareDisplayPhotos(left, right, settings.orderMode));
-  const afterIndex = afterId ? ordered.findIndex((photo) => photo.id === afterId) : -1;
-  const startIndex = afterIndex >= 0 ? afterIndex + 1 : 0;
-  return Array.from({ length: count }, (_, index) => ordered[(startIndex + index) % ordered.length]).filter(
-    (photo): photo is PhotoRecord => photo !== undefined
-  );
-}
-
-function selectRandomPhotos(photos: PhotoRecord[], count: number, afterId: string | null): PhotoRecord[] {
-  const available = photos.filter((photo) => photo.id !== afterId);
-  const pool = available.length > 0 ? [...available] : [...photos];
-  const selected: PhotoRecord[] = [];
-  for (let index = 0; index < count; index += 1) {
-    if (pool.length === 0) {
-      pool.push(...photos);
-    }
-    const selectedIndex = Math.floor(Math.random() * pool.length);
-    const photo = pool.splice(selectedIndex, 1)[0];
-    if (photo) {
-      selected.push(photo);
-    }
-  }
-  return selected;
-}
-
-function compareDisplayPhotos(
-  left: PhotoRecord,
-  right: PhotoRecord,
-  orderMode: DisplaySettings["orderMode"]
-): number {
-  if (orderMode === "filename-asc") return left.originalFilename.localeCompare(right.originalFilename);
-  if (orderMode === "filename-desc") return right.originalFilename.localeCompare(left.originalFilename);
-  const leftDate = orderMode.startsWith("capture") ? (left.captureDate ?? left.createdAt) : left.createdAt;
-  const rightDate = orderMode.startsWith("capture") ? (right.captureDate ?? right.createdAt) : right.createdAt;
-  const comparison = leftDate.localeCompare(rightDate);
-  return orderMode.endsWith("newest") ? -comparison : comparison;
-}
-
 function folderPhotosPath(folderId: string): string {
   return `/admin/folders/${encodeURIComponent(folderId)}/photos`;
 }
 
 function settingsLocation(section: "display" | "schedule" | "folders", kind: "success" | "error", message: string): string {
   return `/?view=${section}&${kind}=${encodeURIComponent(message)}`;
-}
-
-function renderLogo(width: number): string {
-  return `<a class="piframe-logo" href="/?about=1" aria-label="About PiFrame" style="display:inline-block;line-height:0"><img src="/assets/images/PiFrame_Words_Right.png" alt="PiFrame" width="${width.toString()}" style="display:block;height:auto"></a>`;
-}
-
-function escapeHtml(value: string): string {
-  return value
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#39;");
-}
-
-interface FlashMessage {
-  kind: "success" | "error" | null;
-  message: string | null;
 }
