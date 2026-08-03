@@ -117,7 +117,7 @@ Before using them, update `WorkingDirectory` and `User` for the target Pi. Confi
 * `src/data/` owns SQLite migrations and repositories.
 * `src/core/` contains validation and display/schedule defaults.
 * `src/services/` handles ingestion, derivative generation, and recovery work.
-* `src/web/app.ts` currently contains HTTP routing and server-rendered workspace/display UI.
+* `src/web/app.ts` is the small top-level route dispatcher; `src/web/routes/`, `src/web/views/`, `src/web/http/`, and `src/web/static/` separate endpoint behavior, rendering, HTTP helpers, and browser assets.
 * `docs/technical-design.md` describes the architecture and deployment direction.
 
 ## Tasks
