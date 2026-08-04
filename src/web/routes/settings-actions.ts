@@ -45,9 +45,9 @@ export async function handleSettingsActions(context: AppContext, req: IncomingMe
     try {
       const form = await readForm(req);
       const current = context.settings.getJson<DisplaySettings>("display") ?? createDefaultDisplaySettings();
-      const selectedFolderIds = form.useAllFolders === "on" ? [] : context.folders.list().filter((folder) => form[`folder-${folder.id}`] === "on").map((folder) => folder.id);
+      const selectedFolderIds = form.useAllFolders === "on" ? [] : parseSelectedFolders(form, context.folders.list().map((folder) => folder.id));
       if (form.useAllFolders !== "on" && selectedFolderIds.length === 0) { redirect(res, settingsLocation("presentation", "error", "Choose at least one album, or use all albums.")); return true; }
-      const settings: DisplaySettings = { ...current, selectedFolderIds, photoDurationSeconds: parseInteger(form.photoDurationSeconds, current.photoDurationSeconds, 3, 3600, "Photo duration must be between 3 seconds and 1 hour."), imagePresentationMode: parseEnum(form.imagePresentationMode, current.imagePresentationMode, ["fit", "fill"]), orderMode: parseEnum(form.orderMode, current.orderMode, ["random", "filename-asc", "filename-desc", "upload-newest", "upload-oldest", "capture-newest", "capture-oldest"]), screenLayout: parseEnum(form.screenLayout, current.screenLayout, ["single", "multiple", "triple"]), clockEnabled: form.clockEnabled === "on", clockFormat: parseEnum(form.clockFormat, current.clockFormat, ["locale-default", "12h", "24h"]), clockShowSeconds: form.clockShowSeconds === "on", clockShowDate: form.clockShowDate === "on", clockSize: parseEnum(form.clockSize, current.clockSize, ["small", "medium", "large"]) };
+      const settings: DisplaySettings = { ...current, selectedFolderIds, photoDurationSeconds: parseInteger(form.photoDurationSeconds, current.photoDurationSeconds, 3, 3600, "Photo duration must be between 3 seconds and 1 hour."), imagePresentationMode: parseEnum(form.imagePresentationMode, current.imagePresentationMode, ["fit", "fill"]), orderMode: parseEnum(form.orderMode, current.orderMode, ["random", "filename-asc", "filename-desc", "upload-newest", "upload-oldest", "capture-newest", "capture-oldest", "manual"]), screenLayout: parseEnum(form.screenLayout, current.screenLayout, ["single", "multiple", "triple"]), clockEnabled: form.clockEnabled === "on", clockFormat: parseEnum(form.clockFormat, current.clockFormat, ["locale-default", "12h", "24h"]), clockShowSeconds: form.clockShowSeconds === "on", clockShowDate: form.clockShowDate === "on", clockSize: parseEnum(form.clockSize, current.clockSize, ["small", "medium", "large"]) };
       context.settings.putJson("display", settings);
       context.events.record("info", "presentation.settings_saved", "Presentation settings saved.", { selectedFolderCount: selectedFolderIds.length, useAllFolders: selectedFolderIds.length === 0, photoDurationSeconds: settings.photoDurationSeconds, imagePresentationMode: settings.imagePresentationMode, orderMode: settings.orderMode, screenLayout: settings.screenLayout, clockEnabled: settings.clockEnabled });
       redirect(res, settingsLocation("presentation", "success", "Presentation settings saved."));
@@ -94,6 +94,20 @@ function parseLanguage(raw: string | undefined): FrameSettings["language"] {
 function parseOrientation(raw: string | undefined): FrameSettings["displayOrientation"] {
   if (raw === "0" || raw === "90" || raw === "180" || raw === "270") return Number(raw) as FrameSettings["displayOrientation"];
   throw new Error("Choose a valid display orientation.");
+}
+
+function parseSelectedFolders(form: Record<string, string>, folderIds: string[]): string[] {
+  const selected = folderIds.filter((folderId) => form[`folder-${folderId}`] === "on");
+  const selectedSet = new Set(selected);
+  try {
+    const requested = JSON.parse(form.folderOrder ?? "[]");
+    if (!Array.isArray(requested) || !requested.every((folderId) => typeof folderId === "string")) return selected;
+    const ordered = requested.filter((folderId): folderId is string => selectedSet.has(folderId));
+    const missing = selected.filter((folderId) => !ordered.includes(folderId));
+    return [...ordered, ...missing];
+  } catch {
+    return selected;
+  }
 }
 
 function parseInteger(raw: string | undefined, fallback: number, min: number, max: number, message: string): number { if (!raw?.trim()) return fallback; const value = Number(raw); if (!Number.isInteger(value) || value < min || value > max) throw new Error(message); return value; }

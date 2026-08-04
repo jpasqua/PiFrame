@@ -7,3 +7,5 @@
 .upload-choice button:last-child{color:var(--ink);background:#fff}.upload-choice button.selected:last-child{color:#fff;background:var(--accent)}
 
 .batch-upload-button:disabled,.clear-queue-button:disabled{color:#aeb3ba;background:#f4f5f6;cursor:not-allowed}.clear-queue-button{color:var(--ink)!important;background:#eef0f2!important}.upload-state.conflict,.upload-state.duplicate{color:var(--error);font-weight:700}
+
+.photo-controls{display:flex;align-items:center;gap:12px;flex-wrap:wrap}.photo-sort{display:flex;align-items:center;gap:7px;color:var(--muted);font-size:.9rem}.photo-sort select{padding:6px 8px}.photo-order-status{min-height:1.4em;margin:-8px 0 14px;font-size:.88rem}.photo-order-status[data-state="success"]{color:var(--success)}.photo-order-status[data-state="error"]{color:var(--error)}.photo-tile[draggable="true"]{cursor:grab}.photo-tile.is-dragging{opacity:.42;cursor:grabbing}

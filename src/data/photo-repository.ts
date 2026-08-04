@@ -13,6 +13,7 @@ export interface PhotoRecord {
   captureDate: string | null;
   exifOrientation: number | null;
   manualRotationDegrees: number;
+  manualPosition: number;
   processingStatus: string;
   processingError: string | null;
   createdAt: string;
@@ -39,6 +40,7 @@ interface PhotoRow {
   capture_date: string | null;
   exif_orientation: number | null;
   manual_rotation_degrees: number;
+  manual_position: number | null;
   processing_status: string;
   processing_error: string | null;
   created_at: string;
@@ -70,10 +72,12 @@ export class PhotoRepository {
   private readonly updateRotationStatement: Database.Statement<{ id: string; rotation: number; updatedAt: string }>;
   private readonly deleteStatement: Database.Statement<{ id: string }>;
   private readonly statsStatement: Database.Statement<[], PhotoStats>;
+  private readonly nextManualPositionStatement: Database.Statement<{ folderId: string }, { position: number }>;
+  private readonly reorderStatement: Database.Statement<{ id: string; position: number; updatedAt: string }>;
 
   constructor(private readonly db: Database.Database) {
     this.listByFolderStatement = db.prepare(`
-      SELECT * FROM photos WHERE folder_id = @folderId ORDER BY created_at DESC
+      SELECT * FROM photos WHERE folder_id = @folderId ORDER BY manual_position ASC, created_at ASC
     `);
     this.findByNameStatement = db.prepare(`
       SELECT * FROM photos
@@ -84,11 +88,11 @@ export class PhotoRepository {
       INSERT INTO photos (
         id, folder_id, original_filename, stored_basename, mime_type, file_size_bytes,
         width_px, height_px, capture_date, exif_orientation, manual_rotation_degrees,
-        processing_status, created_at, updated_at
+        processing_status, manual_position, created_at, updated_at
       ) VALUES (
         @id, @folder_id, @original_filename, @stored_basename, @mime_type, @file_size_bytes,
         @width_px, @height_px, @capture_date, @exif_orientation, @manual_rotation_degrees,
-        @processing_status, @created_at, @updated_at
+        @processing_status, @manual_position, @created_at, @updated_at
       )
     `);
     this.replaceStatement = db.prepare(`
@@ -134,6 +138,8 @@ export class PhotoRepository {
         SUM(processing_status = 'failed') AS failed
       FROM photos
     `);
+    this.nextManualPositionStatement = db.prepare(`SELECT COALESCE(MAX(manual_position), 0) + 1 AS position FROM photos WHERE folder_id = @folderId`);
+    this.reorderStatement = db.prepare(`UPDATE photos SET manual_position = @position, updated_at = @updatedAt WHERE id = @id`);
   }
 
   listByFolder(folderId: string): PhotoRecord[] {
@@ -174,6 +180,14 @@ export class PhotoRepository {
     return this.deleteStatement.run({ id }).changes > 0;
   }
 
+  reorder(folderId: string, photoIds: string[]): boolean {
+    const existing = this.listByFolder(folderId).map((photo) => photo.id);
+    if (photoIds.length !== existing.length || new Set(photoIds).size !== photoIds.length || photoIds.some((id) => !existing.includes(id))) return false;
+    const updatedAt = new Date().toISOString();
+    this.db.transaction(() => photoIds.forEach((id, index) => this.reorderStatement.run({ id, position: index + 1, updatedAt })))();
+    return true;
+  }
+
   stats(): PhotoStats {
     const row = this.statsStatement.get();
     return {
@@ -198,7 +212,8 @@ export class PhotoRepository {
       height_px: photo.heightPx,
       capture_date: photo.captureDate,
       exif_orientation: photo.exifOrientation,
-    manual_rotation_degrees: 0,
+      manual_rotation_degrees: 0,
+      manual_position: this.nextManualPositionStatement.get({ folderId: photo.folderId })?.position ?? 1,
     processing_status: "pending",
     processing_error: null,
       created_at: timestamp,
@@ -228,6 +243,7 @@ function mapPhotoRow(row: PhotoRow): PhotoRecord {
     captureDate: row.capture_date,
     exifOrientation: row.exif_orientation,
     manualRotationDegrees: row.manual_rotation_degrees,
+    manualPosition: row.manual_position ?? 0,
     processingStatus: row.processing_status,
     processingError: row.processing_error,
     createdAt: row.created_at,

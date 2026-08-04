@@ -56,6 +56,8 @@ export function renderSettingsPage(context: AppContext, flash: FlashMessage, req
     <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Settings - PiFrame</title>
     <link rel="stylesheet" href="/assets/app/workspace.css">
     <link rel="stylesheet" href="/assets/app/general-location.css">
+    <meta name="presentation-folder-order" content="${escapeHtml(JSON.stringify(display.selectedFolderIds))}">
+    <meta name="presentation-order-mode" content="${escapeHtml(display.orderMode)}">
   </head>
   <body><main>
     <aside><div class="brand">${renderLogo(156)}</div><nav>${validSections.map((section) => `<button type="button" data-section="${section}"${section === activeSection ? " class=\"active\"" : ""}>${sectionLabel(section)}</button>`).join("")}</nav><div class="rail-footer"><a href="/display">Open frame</a></div></aside>
@@ -75,6 +77,34 @@ export function renderSettingsPage(context: AppContext, flash: FlashMessage, req
       buttons.forEach((button) => button.addEventListener("click", () => selectSection(button.dataset.section)));
       function syncFolders() { if (!allFolders || !folderChoices) return; folderChoices.style.opacity = allFolders.checked ? ".5" : "1"; folderChoices.querySelectorAll("input").forEach((input) => input.disabled = allFolders.checked); } if (allFolders) { allFolders.addEventListener("change", syncFolders); syncFolders(); }
       document.querySelectorAll(".piframe-logo").forEach((logo) => logo.addEventListener("click", (event) => { event.preventDefault(); about.showModal(); })); document.querySelector("#about-close").addEventListener("click", () => about.close()); if (new URLSearchParams(location.search).has("about")) about.showModal();
+    </script>
+    <script>
+      (() => {
+        const form = document.querySelector('form[action="/admin/presentation/save"]');
+        if (!form) return;
+        const select = form.querySelector('select[name="orderMode"]');
+        const mode = document.querySelector('meta[name="presentation-order-mode"]')?.content;
+        if (select && !select.querySelector('option[value="manual"]')) {
+          const option = document.createElement("option"); option.value = "manual"; option.textContent = "Manual album order"; select.append(option);
+        }
+        if (select && mode === "manual") select.value = "manual";
+        const orderInput = document.createElement("input"); orderInput.type = "hidden"; orderInput.name = "folderOrder";
+        try { orderInput.value = document.querySelector('meta[name="presentation-folder-order"]')?.content || "[]"; } catch { orderInput.value = "[]"; }
+        form.append(orderInput);
+        let order; try { order = JSON.parse(orderInput.value); } catch { order = []; }
+        if (!Array.isArray(order)) order = [];
+        const folderInputs = [...form.querySelectorAll('#folder-choices input[type="checkbox"]')];
+        folderInputs.forEach((input) => input.addEventListener("change", () => {
+          const folderId = input.name.replace(/^folder-/, "");
+          order = order.filter((id) => id !== folderId);
+          if (input.checked) order.push(folderId);
+          orderInput.value = JSON.stringify(order);
+        }));
+        form.addEventListener("submit", () => {
+          const selected = new Set(folderInputs.filter((input) => input.checked).map((input) => input.name.replace(/^folder-/, "")));
+          orderInput.value = JSON.stringify([...order.filter((id) => selected.has(id)), ...[...selected].filter((id) => !order.includes(id))]);
+        });
+      })();
     </script>
   </main></body>
 </html>`;
@@ -192,7 +222,7 @@ export function renderFolderPhotosPage(context: AppContext, folderId: string, fl
       const nameTitle = photo.processingError ? `${photo.originalFilename}\nProcessing error: ${photo.processingError}` : photo.originalFilename;
       const rotateLeft = (photo.manualRotationDegrees + 270) % 360;
       const rotateRight = (photo.manualRotationDegrees + 90) % 360;
-      return `<tr>
+      return `<tr data-photo-id="${escapeHtml(photo.id)}">
   <td><div class="photo-name${nameState}">${photo.processingStatus === "ready" ? `<img src="/media/thumbnail/${photo.id}.jpg?v=${encodeURIComponent(photo.updatedAt)}" alt="">` : ""}<span title="${escapeHtml(nameTitle)}">${escapeHtml(displayName)}</span></div></td>
   <td>${photo.widthPx && photo.heightPx ? `${photo.widthPx.toString()} x ${photo.heightPx.toString()}` : "Unknown"}</td>
   <td>${formatBytes(photo.fileSizeBytes)}</td>
@@ -201,7 +231,7 @@ export function renderFolderPhotosPage(context: AppContext, folderId: string, fl
     }).join("\n");
   const photoGrid = photos.length === 0
     ? `<p class="empty">No photos in this album yet.</p>`
-    : `<div class="photo-grid">${photos.map((photo) => `<article class="photo-tile">${photo.processingStatus === "ready" ? `<img src="/media/thumbnail/${photo.id}.jpg?v=${encodeURIComponent(photo.updatedAt)}" alt="${escapeHtml(photo.originalFilename)}">` : `<div class="photo-placeholder">${escapeHtml(photo.processingStatus)}</div>`}<p title="${escapeHtml(photo.originalFilename)}">${escapeHtml(photo.originalFilename)}</p></article>`).join("")}</div>`;
+    : `<div class="photo-grid" data-folder-id="${escapeHtml(folder.id)}">${photos.map((photo) => `<article class="photo-tile" data-photo-id="${escapeHtml(photo.id)}" data-photo-name="${escapeHtml(photo.originalFilename)}" data-photo-created-at="${escapeHtml(photo.createdAt)}">${photo.processingStatus === "ready" ? `<img src="/media/thumbnail/${photo.id}.jpg?v=${encodeURIComponent(photo.updatedAt)}" alt="${escapeHtml(photo.originalFilename)}">` : `<div class="photo-placeholder">${escapeHtml(photo.processingStatus)}</div>`}<p title="${escapeHtml(photo.originalFilename)}">${escapeHtml(photo.originalFilename)}</p></article>`).join("")}</div>`;
 
   return `<!doctype html>
 <html lang="en">
@@ -219,7 +249,7 @@ export function renderFolderPhotosPage(context: AppContext, folderId: string, fl
       
       
       <section class="panel"><h2>Upload photos</h2><form id="batch-upload-form" class="upload-form" method="post" action="/admin/photos/upload" enctype="multipart/form-data"><input type="hidden" name="folderId" value="${escapeHtml(folder.id)}"><input id="batch-photo-input" type="file" name="photo" accept="image/jpeg,image/png,image/webp,image/gif,image/tiff,image/avif,image/heif" aria-label="Choose photos" multiple onchange="window.preflightDuplicateFiles(this.files)"><button id="batch-upload-button" class="batch-upload-button" type="submit" disabled>Upload</button><button id="clear-upload-queue" class="clear-queue-button" type="button" disabled>Clear</button><p id="batch-upload-help" class="upload-help">No photos in queue.</p></form><ul id="upload-queue" class="upload-queue" hidden></ul></section><script src="/assets/app/album-queue.js" defer></script>
-      <section class="panel photos-panel"><div class="photos-head"><h2>Photos (${photos.length.toString()})</h2><div class="view-switch" aria-label="Photo view"><button type="button" class="active" data-photo-view-button="detail">Detail</button><button type="button" data-photo-view-button="grid">Grid</button></div></div><section class="photo-view" data-photo-view="detail"><div class="table-wrap"><table><thead><tr><th>Name</th><th>Dimensions</th><th>Size</th><th>Actions</th></tr></thead><tbody>${photoRows}</tbody></table></div></section><section class="photo-view" data-photo-view="grid" hidden>${photoGrid}</section></section>
+      <section class="panel photos-panel"><div class="photos-head"><h2>Photos (${photos.length.toString()})</h2><div class="photo-controls"><label class="photo-sort">Sort <select id="photo-sort"><option value="manual">Manual</option><option value="date">Upload date (newest first)</option><option value="alphabetical">Alphabetical</option></select></label><div class="view-switch" aria-label="Photo view"><button type="button" class="active" data-photo-view-button="detail">Detail</button><button type="button" data-photo-view-button="grid">Grid</button></div></div></div><p id="photo-order-status" class="photo-order-status" aria-live="polite"></p><section class="photo-view" data-photo-view="detail"><div class="table-wrap"><table><thead><tr><th>Name</th><th>Dimensions</th><th>Size</th><th>Actions</th></tr></thead><tbody>${photoRows}</tbody></table></div></section><section class="photo-view" data-photo-view="grid" hidden>${photoGrid}</section></section>
     </section>
     <script src="/assets/app/album-interactions.js" defer></script>
   </main></body>
@@ -243,7 +273,8 @@ export function renderDisplaySettingsPage(context: AppContext, flash: FlashMessa
     ["filename-asc", "Filename A-Z"],
     ["filename-desc", "Filename Z-A"],
     ["upload-newest", "Newest upload first"],
-    ["upload-oldest", "Oldest upload first"]
+    ["upload-oldest", "Oldest upload first"],
+    ["manual", "Manual album order"]
   ];
   const orderSelectOptions = orderOptions.map(([value, label]) => {
     return `<option value="${value}"${settings.orderMode === value ? " selected" : ""}>${label}</option>`;

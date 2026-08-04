@@ -74,4 +74,15 @@ function migrate(db: Database.Database): void {
       db.pragma("user_version = 2");
     })();
   }
+
+  if (currentVersion < 3) {
+    db.transaction(() => {
+      db.exec("ALTER TABLE photos ADD COLUMN manual_position INTEGER");
+      db.exec(`WITH ranked AS (
+        SELECT id, ROW_NUMBER() OVER (PARTITION BY folder_id ORDER BY created_at ASC, id ASC) AS position FROM photos
+      ) UPDATE photos SET manual_position = (SELECT position FROM ranked WHERE ranked.id = photos.id)`);
+      db.exec("CREATE INDEX photos_folder_manual_position_idx ON photos(folder_id, manual_position)");
+      db.pragma("user_version = 3");
+    })();
+  }
 }

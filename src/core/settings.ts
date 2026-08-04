@@ -7,7 +7,8 @@ export interface DisplaySettings {
     | "upload-newest"
     | "upload-oldest"
     | "capture-newest"
-    | "capture-oldest";
+    | "capture-oldest"
+    | "manual";
   photoDurationSeconds: number;
   transitionStyle: "none" | "crossfade" | "fade-black" | "slide-left" | "slide-right" | "slow-pan";
   transitionDurationSeconds: number;

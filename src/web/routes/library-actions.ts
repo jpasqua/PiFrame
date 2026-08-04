@@ -141,6 +141,31 @@ export async function handleLibraryActions(context: AppContext, ingestion: Photo
         }
       }
 
+      if (method === "POST" && url.pathname === "/admin/photos/reorder") {
+        if (!isTrustedOrigin(req)) {
+          return sendPlainText(res, 403, "Forbidden");
+        }
+        try {
+          const form = await readForm(req);
+          const folderId = requireFormValue(form, "folderId");
+          if (!context.folders.get(folderId)) {
+            return sendJson(res, 404, { status: "error", message: "Album not found." });
+          }
+          const photoIds = JSON.parse(requireFormValue(form, "photoIds"));
+          if (!Array.isArray(photoIds) || !photoIds.every((photoId) => typeof photoId === "string")) {
+            throw new Error("Invalid photo order.");
+          }
+          if (!context.photos.reorder(folderId, photoIds)) {
+            return sendJson(res, 400, { status: "error", message: "Photo order did not match this album." });
+          }
+          context.events.record("info", "photo.manual_order_saved", "Saved manual photo order.", { folderId, photoCount: photoIds.length });
+          return sendJson(res, 200, { status: "ok" });
+        } catch (error) {
+          const message = error instanceof Error ? error.message : "Could not save photo order.";
+          return sendJson(res, 400, { status: "error", message });
+        }
+      }
+
       if (method === "POST" && url.pathname === "/admin/photos/upload") {
         if (!isTrustedOrigin(req)) {
           return sendPlainText(res, 403, "Forbidden");

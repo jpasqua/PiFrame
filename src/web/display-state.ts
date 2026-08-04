@@ -64,7 +64,7 @@ export function selectDisplaySlide(photos: PhotoRecord[], settings: DisplaySetti
   if (photos.length === 0) return { layout: "single", photos: [], cursor: null, advanceCount: 0 };
   const candidates = settings.orderMode === "random"
     ? selectRandomPhotos(photos, Math.min(3, photos.length), afterId)
-    : selectOrderedPhotos(photos, Math.min(4, photos.length), afterId, settings.orderMode);
+    : selectOrderedPhotos(photos, Math.min(4, photos.length), afterId, settings);
   return selectSlideFromCandidates(candidates, settings, displayOrientation);
 }
 
@@ -76,8 +76,8 @@ function selectSlideFromCandidates(candidates: PhotoRecord[], settings: DisplayS
   return chooseAdaptiveLayout(candidates, displayOrientation);
 }
 
-function selectOrderedPhotos(photos: PhotoRecord[], count: number, afterId: string | null, orderMode: DisplaySettings["orderMode"]): PhotoRecord[] {
-  const ordered = [...photos].sort((left, right) => compareDisplayPhotos(left, right, orderMode));
+function selectOrderedPhotos(photos: PhotoRecord[], count: number, afterId: string | null, settings: DisplaySettings): PhotoRecord[] {
+  const ordered = [...photos].sort((left, right) => compareDisplayPhotos(left, right, settings));
   const afterIndex = afterId ? ordered.findIndex((photo) => photo.id === afterId) : -1;
   return Array.from({ length: count }, (_, index) => ordered[(Math.max(afterIndex, -1) + 1 + index) % ordered.length]).filter((photo): photo is PhotoRecord => photo !== undefined);
 }
@@ -153,7 +153,15 @@ function selectRandomPhotos(photos: PhotoRecord[], count: number, afterId: strin
   return selected;
 }
 
-function compareDisplayPhotos(left: PhotoRecord, right: PhotoRecord, orderMode: DisplaySettings["orderMode"]): number {
+function compareDisplayPhotos(left: PhotoRecord, right: PhotoRecord, settings: DisplaySettings): number {
+  const { orderMode } = settings;
+  if (orderMode === "manual") {
+    const folderOrder = new Map(settings.selectedFolderIds.map((folderId, index) => [folderId, index]));
+    const leftFolder = folderOrder.get(left.folderId) ?? Number.MAX_SAFE_INTEGER;
+    const rightFolder = folderOrder.get(right.folderId) ?? Number.MAX_SAFE_INTEGER;
+    const byFolder = leftFolder - rightFolder || left.folderId.localeCompare(right.folderId);
+    return byFolder || left.manualPosition - right.manualPosition || left.id.localeCompare(right.id);
+  }
   if (orderMode === "filename-asc") return left.originalFilename.localeCompare(right.originalFilename);
   if (orderMode === "filename-desc") return right.originalFilename.localeCompare(left.originalFilename);
   const leftDate = orderMode.startsWith("capture") ? (left.captureDate ?? left.createdAt) : left.createdAt;
