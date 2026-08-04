@@ -4,6 +4,7 @@ import { PhotoIngestionService } from "../services/photo-ingestion.js";
 import { LocationLookupService } from "../services/location-lookup.js";
 import { redirect, sendHtml } from "./http/responses.js";
 import { handleDisplayRoute } from "./routes/display.js";
+import { RandomDisplayPlanner } from "./display-state.js";
 import { handleLibraryActions } from "./routes/library-actions.js";
 import { handleLocationRoute } from "./routes/location.js";
 import { handleSettingsActions } from "./routes/settings-actions.js";
@@ -18,6 +19,7 @@ interface App {
 export function createApp(context: AppContext): App {
   const ingestion = new PhotoIngestionService(context.config, context.photos);
   const locationLookup = new LocationLookupService();
+  const randomDisplayPlanner = new RandomDisplayPlanner();
 
   return {
     async handle(req, res) {
@@ -26,7 +28,7 @@ export function createApp(context: AppContext): App {
 
       if (await handleSystemRoute(context, req, res, url)) return;
 
-      if (handleDisplayRoute(context, req, res, url)) return;
+      if (handleDisplayRoute(context, randomDisplayPlanner, req, res, url)) return;
       if (handleWorkspaceGetRoute(context, req, res, url)) return;
 
       if (await handleLocationRoute(locationLookup, req, res, url)) return;

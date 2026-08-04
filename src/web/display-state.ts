@@ -30,18 +30,48 @@ export function selectDisplayPhotos(photos: PhotoRecord[], settings: DisplaySett
   return selectDisplaySlide(photos, settings, afterId, 0).photos;
 }
 
-export type DisplayLayout = "single" | "portrait-pair" | "landscape-pair" | "landscape-trio" | "portrait-trio";
+export type DisplayLayout = "single" | "portrait-pair" | "landscape-pair" | "landscape-side-pair" | "portrait-triptych" | "landscape-trio" | "portrait-trio";
 
-export interface DisplaySlide { layout: DisplayLayout; photos: PhotoRecord[]; cursor: string | null; }
+export interface DisplaySlide { layout: DisplayLayout; photos: PhotoRecord[]; cursor: string | null; advanceCount: number; }
+
+/** A local shuffled deck gives random playback an actual upcoming sequence to plan against. */
+export class RandomDisplayPlanner {
+  private readonly decks = new Map<string, RandomDeck>();
+
+  next(sessionId: string, photos: PhotoRecord[], settings: DisplaySettings, displayOrientation: 0 | 90 | 180 | 270): DisplaySlide {
+    const deck = this.decks.get(sessionId) ?? { ids: [], sourceKey: "" };
+    this.decks.set(sessionId, deck);
+    const key = photos.map((photo) => photo.id).sort().join("|");
+    if (key !== deck.sourceKey) { deck.sourceKey = key; deck.ids = []; }
+    const byId = new Map(photos.map((photo) => [photo.id, photo]));
+    this.fillDeck(deck, photos);
+    const candidates = deck.ids.slice(0, Math.min(4, deck.ids.length)).map((id) => byId.get(id)).filter((photo): photo is PhotoRecord => photo !== undefined);
+    const slide = selectSlideFromCandidates(candidates, settings, displayOrientation);
+    deck.ids.splice(0, slide.advanceCount);
+    return slide;
+  }
+
+  private fillDeck(deck: RandomDeck, photos: PhotoRecord[]): void {
+    if (deck.ids.length >= 4 || photos.length === 0) return;
+    const pending = new Set(deck.ids);
+    deck.ids.push(...shuffle(photos.map((photo) => photo.id).filter((id) => !pending.has(id))));
+  }
+}
+
+interface RandomDeck { ids: string[]; sourceKey: string; }
 
 export function selectDisplaySlide(photos: PhotoRecord[], settings: DisplaySettings, afterId: string | null, displayOrientation: 0 | 90 | 180 | 270): DisplaySlide {
-  if (photos.length === 0) return { layout: "single", photos: [], cursor: null };
+  if (photos.length === 0) return { layout: "single", photos: [], cursor: null, advanceCount: 0 };
   const candidates = settings.orderMode === "random"
     ? selectRandomPhotos(photos, Math.min(3, photos.length), afterId)
-    : selectOrderedPhotos(photos, Math.min(3, photos.length), afterId, settings.orderMode);
+    : selectOrderedPhotos(photos, Math.min(4, photos.length), afterId, settings.orderMode);
+  return selectSlideFromCandidates(candidates, settings, displayOrientation);
+}
+
+function selectSlideFromCandidates(candidates: PhotoRecord[], settings: DisplaySettings, displayOrientation: 0 | 90 | 180 | 270): DisplaySlide {
   if (settings.screenLayout === "single") {
     const selected = candidates.slice(0, 1);
-    return { layout: "single", photos: selected, cursor: selected[0]?.id ?? null };
+    return { layout: "single", photos: selected, cursor: selected[0]?.id ?? null, advanceCount: selected.length };
   }
   return chooseAdaptiveLayout(candidates, displayOrientation);
 }
@@ -60,14 +90,34 @@ function chooseAdaptiveLayout(candidates: PhotoRecord[], displayOrientation: 0 |
   if (pair.length === 2 && pair.every((photo) => photoShape(photo) === desiredPairShape)) {
     options.push({ layout: portraitScreen ? "landscape-pair" : "portrait-pair", photos: pair, score: 2.2 });
   }
+  if (!portraitScreen && pair.length === 2 && pair.every((photo) => photoShape(photo) === "landscape") && canFormTrio(candidates.slice(1, 4))) {
+    options.push({ layout: "landscape-side-pair", photos: pair, score: 2.2 });
+  }
   const trio = candidates.slice(0, 3);
   const shapes = trio.map(photoShape);
-  if (trio.length === 3 && shapes.filter((shape) => shape === "portrait").length === 2 && shapes.includes("landscape")) {
-    options.push({ layout: portraitScreen ? "portrait-trio" : "landscape-trio", photos: arrangeByShapes(trio, portraitScreen ? ["portrait", "portrait", "landscape"] : ["landscape", "portrait", "portrait"]), score: 3.1 });
+  if (!portraitScreen && trio.length === 3 && shapes.every((shape) => shape === "portrait")) {
+    options.push({ layout: "portrait-triptych", photos: trio, score: 3.3 });
+  }
+  if (portraitScreen && trio.length === 3 && shapes.filter((shape) => shape === "portrait").length === 2 && shapes.includes("landscape")) {
+    options.push({ layout: "portrait-trio", photos: arrangeByShapes(trio, ["portrait", "portrait", "landscape"]), score: 3.1 });
   }
   const best = options.reduce((winner, option) => option.score > winner.score ? option : winner);
-  const consumed = candidates.slice(0, best.photos.length);
-  return { layout: best.layout, photos: best.photos, cursor: consumed[consumed.length - 1]?.id ?? null };
+  const bridgeToNextTrio = best.photos.length === 2 && canFormTrio(candidates.slice(1, 4));
+  const consumed = candidates.slice(0, bridgeToNextTrio ? 1 : best.photos.length);
+  return { layout: best.layout, photos: best.photos, cursor: consumed[consumed.length - 1]?.id ?? null, advanceCount: consumed.length };
+}
+
+function shuffle<T>(values: T[]): T[] {
+  const shuffled = [...values];
+  for (let index = shuffled.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(Math.random() * (index + 1));
+    [shuffled[index], shuffled[swapIndex]] = [shuffled[swapIndex]!, shuffled[index]!];
+  }
+  return shuffled;
+}
+
+function canFormTrio(photos: PhotoRecord[]): boolean {
+  return photos.length === 3 && photos.filter((photo) => photoShape(photo) === "portrait").length === 2 && photos.some((photo) => photoShape(photo) === "landscape");
 }
 
 function arrangeByShapes(photos: PhotoRecord[], wanted: Array<"portrait" | "landscape">): PhotoRecord[] {

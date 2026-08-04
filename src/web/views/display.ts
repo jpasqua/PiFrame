@@ -1,7 +1,7 @@
 import type { DisplaySettings, FrameSettings } from "../../core/settings.js";
 import { renderLogo } from "./shared.js";
 
-export function renderDisplayPage(settings: DisplaySettings, frame: FrameSettings): string {
+export function renderDisplayPage(settings: DisplaySettings, frame: FrameSettings, presentationVersion: string): string {
   const durationMs = Math.max(1_000, Math.round(settings.photoDurationSeconds * 1_000));
   const presentation = settings.imagePresentationMode === "fill" ? "cover" : "contain";
   const clockSize = { small: "1rem", medium: "1.6rem", large: "2.4rem" }[settings.clockSize] ?? "1.6rem";
@@ -21,6 +21,8 @@ export function renderDisplayPage(settings: DisplaySettings, frame: FrameSetting
       #stage { position:absolute; inset:0; display:grid; grid-template-columns:1fr; gap:0; background:#000; }
       #stage.portrait-pair { grid-template-columns:repeat(2, minmax(0, 1fr)); gap:4px; }
       #stage.landscape-pair { grid-template-rows:repeat(2, minmax(0, 1fr)); gap:4px; }
+      #stage.landscape-side-pair { grid-template-columns:repeat(2, minmax(0, 1fr)); gap:4px; }
+      #stage.portrait-triptych { grid-template-columns:repeat(3, minmax(0, 1fr)); gap:4px; }
       #stage.landscape-trio { grid-template-columns:repeat(2, minmax(0, 1fr)); grid-template-rows:.78fr 1.22fr; gap:4px; }
       #stage.landscape-trio .photo-panel:first-child { grid-column:1 / -1; }
       #stage.portrait-trio { grid-template-columns:repeat(2, minmax(0, 1fr)); grid-template-rows:1.18fr .82fr; gap:4px; }
@@ -44,6 +46,9 @@ export function renderDisplayPage(settings: DisplaySettings, frame: FrameSetting
     </main>
     <script>
       const durationMs = ${durationMs.toString()};
+      const presentationVersion = ${JSON.stringify(presentationVersion)};
+      const displaySession = sessionStorage.getItem("piframe-display-session") || crypto.randomUUID();
+      sessionStorage.setItem("piframe-display-session", displaySession);
       const stage = document.querySelector("#stage");
       const displaySurface = document.querySelector("#display-surface");
       const panels = Array.from(stage.querySelectorAll(".photo-panel"));
@@ -73,8 +78,9 @@ export function renderDisplayPage(settings: DisplaySettings, frame: FrameSetting
 
       async function advance() {
         try {
-          const response = await fetch("/api/display/next?after=" + encodeURIComponent(currentId), { cache: "no-store" });
+          const response = await fetch("/api/display/next?after=" + encodeURIComponent(currentId) + "&session=" + encodeURIComponent(displaySession), { cache: "no-store" });
           const payload = await response.json();
+          if (payload.presentationVersion !== presentationVersion) { location.reload(); return; }
           if (!payload.displayOn) {
             scheduleOff = true;
             hideDisplay();
@@ -124,8 +130,9 @@ export function renderDisplayPage(settings: DisplaySettings, frame: FrameSetting
       }
       async function pollSchedule() {
         try {
-          const response = await fetch("/api/display/next", { cache: "no-store" });
+          const response = await fetch("/api/display/next?probe=1", { cache: "no-store" });
           const payload = await response.json();
+          if (payload.presentationVersion !== presentationVersion) { location.reload(); return; }
           if (!payload.displayOn) {
             scheduleOff = true;
             hideDisplay();
