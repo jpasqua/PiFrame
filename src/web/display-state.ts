@@ -27,15 +27,63 @@ function currentTimeInZone(now: Date, timeZone: string): number {
 }
 
 export function selectDisplayPhotos(photos: PhotoRecord[], settings: DisplaySettings, afterId: string | null): PhotoRecord[] {
-  if (photos.length === 0) return [];
-  const count = settings.screenLayout === "triple" ? 3 : 1;
-  if (settings.orderMode === "random") return selectRandomPhotos(photos, count, afterId);
-  const ordered = [...photos].sort((left, right) => compareDisplayPhotos(left, right, settings.orderMode));
+  return selectDisplaySlide(photos, settings, afterId, 0).photos;
+}
+
+export type DisplayLayout = "single" | "portrait-pair" | "landscape-pair" | "landscape-trio" | "portrait-trio";
+
+export interface DisplaySlide { layout: DisplayLayout; photos: PhotoRecord[]; cursor: string | null; }
+
+export function selectDisplaySlide(photos: PhotoRecord[], settings: DisplaySettings, afterId: string | null, displayOrientation: 0 | 90 | 180 | 270): DisplaySlide {
+  if (photos.length === 0) return { layout: "single", photos: [], cursor: null };
+  const candidates = settings.orderMode === "random"
+    ? selectRandomPhotos(photos, Math.min(3, photos.length), afterId)
+    : selectOrderedPhotos(photos, Math.min(3, photos.length), afterId, settings.orderMode);
+  if (settings.screenLayout === "single") {
+    const selected = candidates.slice(0, 1);
+    return { layout: "single", photos: selected, cursor: selected[0]?.id ?? null };
+  }
+  return chooseAdaptiveLayout(candidates, displayOrientation);
+}
+
+function selectOrderedPhotos(photos: PhotoRecord[], count: number, afterId: string | null, orderMode: DisplaySettings["orderMode"]): PhotoRecord[] {
+  const ordered = [...photos].sort((left, right) => compareDisplayPhotos(left, right, orderMode));
   const afterIndex = afterId ? ordered.findIndex((photo) => photo.id === afterId) : -1;
-  const startIndex = afterIndex >= 0 ? afterIndex + 1 : 0;
-  return Array.from({ length: count }, (_, index) => ordered[(startIndex + index) % ordered.length]).filter(
-    (photo): photo is PhotoRecord => photo !== undefined
-  );
+  return Array.from({ length: count }, (_, index) => ordered[(Math.max(afterIndex, -1) + 1 + index) % ordered.length]).filter((photo): photo is PhotoRecord => photo !== undefined);
+}
+
+function chooseAdaptiveLayout(candidates: PhotoRecord[], displayOrientation: 0 | 90 | 180 | 270): DisplaySlide {
+  const portraitScreen = displayOrientation === 90 || displayOrientation === 270;
+  const options: Array<{ layout: DisplayLayout; photos: PhotoRecord[]; score: number }> = [{ layout: "single", photos: candidates.slice(0, 1), score: 1 }];
+  const pair = candidates.slice(0, 2);
+  const desiredPairShape = portraitScreen ? "landscape" : "portrait";
+  if (pair.length === 2 && pair.every((photo) => photoShape(photo) === desiredPairShape)) {
+    options.push({ layout: portraitScreen ? "landscape-pair" : "portrait-pair", photos: pair, score: 2.2 });
+  }
+  const trio = candidates.slice(0, 3);
+  const shapes = trio.map(photoShape);
+  if (trio.length === 3 && shapes.filter((shape) => shape === "portrait").length === 2 && shapes.includes("landscape")) {
+    options.push({ layout: portraitScreen ? "portrait-trio" : "landscape-trio", photos: arrangeByShapes(trio, portraitScreen ? ["portrait", "portrait", "landscape"] : ["landscape", "portrait", "portrait"]), score: 3.1 });
+  }
+  const best = options.reduce((winner, option) => option.score > winner.score ? option : winner);
+  const consumed = candidates.slice(0, best.photos.length);
+  return { layout: best.layout, photos: best.photos, cursor: consumed[consumed.length - 1]?.id ?? null };
+}
+
+function arrangeByShapes(photos: PhotoRecord[], wanted: Array<"portrait" | "landscape">): PhotoRecord[] {
+  const remaining = [...photos];
+  return wanted.map((shape) => {
+    const index = remaining.findIndex((photo) => photoShape(photo) === shape);
+    return remaining.splice(index >= 0 ? index : 0, 1)[0];
+  }).filter((photo): photo is PhotoRecord => photo !== undefined);
+}
+
+function photoShape(photo: PhotoRecord): "portrait" | "landscape" | "square" {
+  let width = photo.widthPx ?? 1;
+  let height = photo.heightPx ?? 1;
+  if (photo.exifOrientation === 5 || photo.exifOrientation === 6 || photo.exifOrientation === 7 || photo.exifOrientation === 8 || photo.manualRotationDegrees === 90 || photo.manualRotationDegrees === 270) [width, height] = [height, width];
+  const ratio = width / height;
+  return ratio < .85 ? "portrait" : ratio > 1.15 ? "landscape" : "square";
 }
 
 function timeOfDayToMinutes(value: string): number {

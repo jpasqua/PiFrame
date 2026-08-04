@@ -12,7 +12,7 @@ export interface DisplaySettings {
   transitionStyle: "none" | "crossfade" | "fade-black" | "slide-left" | "slide-right" | "slow-pan";
   transitionDurationSeconds: number;
   screenOrientation: "landscape" | "portrait";
-  screenLayout: "single" | "triple";
+  screenLayout: "single" | "multiple" | "triple";
   imagePresentationMode: "fit" | "fill" | "fit-blur";
   clockEnabled: boolean;
   clockFormat: "locale-default" | "12h" | "24h";
