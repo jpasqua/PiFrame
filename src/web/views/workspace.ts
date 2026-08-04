@@ -104,6 +104,17 @@ export function renderSettingsPage(context: AppContext, flash: FlashMessage, req
           const selected = new Set(folderInputs.filter((input) => input.checked).map((input) => input.name.replace(/^folder-/, "")));
           orderInput.value = JSON.stringify([...order.filter((id) => selected.has(id)), ...[...selected].filter((id) => !order.includes(id))]);
         });
+        const layoutField = form.querySelector('select[name="screenLayout"]')?.closest("label");
+        if (layoutField && !form.querySelector('select[name="transitionStyle"]')) {
+          const transitionStyle = ${JSON.stringify(display.transitionStyle)};
+          const transitionDuration = ${display.transitionDurationSeconds.toString()};
+          const transitionOptions = [["none", "No transition"], ["crossfade", "Crossfade"], ["fade-black", "Fade through black"], ["slide-left", "Swipe left"], ["slide-right", "Swipe right"], ["slow-pan", "Gentle zoom"]]
+            .map(([value, label]) => "<option value='" + value + "'" + (value === transitionStyle ? " selected" : "") + ">" + label + "</option>").join("");
+          const transitionFields = document.createElement("div");
+          transitionFields.className = "transition-fields";
+          transitionFields.innerHTML = "<label class='field'>Transition<select name='transitionStyle'>" + transitionOptions + "</select><small>Transitions apply to the complete slide, including multi-photo layouts.</small></label><label class='field'>Transition duration (seconds)<input type='number' name='transitionDurationSeconds' min='0.2' max='3' step='0.1' value='" + transitionDuration.toString() + "' required></label>";
+          layoutField.insertAdjacentElement("afterend", transitionFields);
+        }
       })();
     </script>
   </main></body>
