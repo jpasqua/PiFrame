@@ -7,6 +7,7 @@ PiFrame is a local-first digital picture frame built with Node.js, TypeScript, S
 * SQLite-backed albums and managed photo storage
 * Unified owner workspace with Dashboard, General, Presentation, Schedule, Albums, and System Status views
 * General frame settings for identity, local description, location, time zone, language, and display orientation
+* Assisted location setup using browser geolocation, place search, automatic time-zone resolution, and an editable advanced settings disclosure
 * Album creation, renaming, and two-step deletion that removes contained photos and managed assets
 * Album detail pages with a batch upload queue, Detail and Grid photo views, rotation, retry, and deletion actions
 * Multi-file image upload for JPEG, PNG, WebP, GIF, TIFF, AVIF, and HEIF files up to 25 MB each
@@ -84,6 +85,16 @@ npm run build
 * Add an already-used filename to the queue; select Keep both, Replace, or Skip before uploading.
 * Rotate a ready photo and confirm both its thumbnail and slideshow image update.
 * Toggle the schedule or force-off setting and confirm `/display` becomes black.
+* Save General settings, including a location search or browser-location lookup, and confirm the selected time zone persists after reload.
+
+## Location Lookup
+
+General settings keeps location editable while providing two optional, user-initiated helpers:
+
+* **Use this device's location** asks the browser for coordinates, resolves a nearby city/region/country, and suggests the matching IANA time zone.
+* **Search location** finds matching places from typed city, region, country, or postal-code text. Select a result before saving.
+
+No location lookup occurs automatically. Text search and time-zone resolution use [Open-Meteo](https://open-meteo.com/); reverse geocoding uses [Nominatim](https://nominatim.org/) with [OpenStreetMap contributor](https://www.openstreetmap.org/copyright) attribution. Reverse lookups are cached in memory and serialized to respect the public Nominatim service's request limit. Language is currently fixed to English (United States) until the interface is translated.
 
 ## Storage and Processing
 

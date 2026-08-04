@@ -1,0 +1,68 @@
+PiFrame Development Handoff
+============================
+
+Current state
+-------------
+PiFrame is a local-first Node.js, TypeScript, SQLite, and Sharp application.
+It runs a loopback-only owner workspace and a Chromium-friendly kiosk display.
+The storage and administration foundation is working:
+
+- Albums can be created, renamed, deleted, and populated with photos.
+- Uploads use a multi-file queue with duplicate decisions: Keep both, Replace,
+  or Skip.
+- Photos are processed into thumbnail and display derivatives in the background.
+  Failed processing can be retried. Rotation is non-destructive and regenerates
+  derived assets.
+- The unified workspace contains Dashboard, General, Presentation, Schedule,
+  Albums, and System Status views.
+- General settings persist frame identity, description, location, time zone,
+  language, and display orientation. Location can be entered manually, searched,
+  or obtained from browser geolocation. Nominatim reverse geocoding and
+  Open-Meteo time-zone resolution are opt-in and acknowledged in the UI.
+- Presentation controls the photo source, duration, ordering, layout, sizing,
+  and clock. Scheduling currently turns the browser display black when off.
+
+Recent repository work
+----------------------
+The large original web file was split into focused HTTP helpers, route modules,
+view modules, and served CSS/JavaScript assets. src/web/app.ts is now only the
+top-level route dispatcher. The .gitignore rule for runtime data was corrected
+so src/data/ is tracked source code rather than accidentally ignored.
+
+Documentation
+-------------
+README.md is the operator and developer guide. It covers requirements,
+installation, build/run/check commands, manual smoke tests, storage layout,
+location lookup behavior and attribution, kiosk templates, current routes, and
+the high-level task list.
+
+technical-design.md is the architecture reference. It explains the source-layer
+boundaries, SQLite data model, photo lifecycle, display/time model, location
+provider boundary, HTTP safety boundary, and the future Pi platform adapter.
+It intentionally does not repeat README operational guidance.
+
+Remaining cleanup and refactoring
+---------------------------------
+- Add automated unit and integration tests for repositories, upload conflict
+  decisions, processing failures/retries, rotation, slideshow selection, and
+  location lookup behavior.
+- Add database/filesystem reconciliation for interrupted file and metadata
+  operations.
+- Replace remaining unreachable legacy page renderers with deleted code once
+  their redirects have remained stable.
+- Continue extracting repeated page styles and the remaining large workspace
+  renderer into focused components where it improves readability.
+- Define authentication and authorization before any non-loopback administration
+  mode.
+- Define backup, restore, and upgrade/migration procedures.
+- Complete Raspberry Pi operational work: installer guidance, kiosk recovery,
+  real HDMI standby, hostname application, and device diagnostics.
+
+Next development focus
+----------------------
+Enhance actual photo presentation on the kiosk display. Priorities include
+single- and multi-photo layout behavior, portrait-orientation handling, visual
+transitions, timing, sizing/cropping choices, captions/clock placement, and
+graceful behavior when there are too few eligible photos. Keep the existing
+display settings model and local slideshow API as the foundation, extending
+them only when a visible presentation behavior requires a new setting.
