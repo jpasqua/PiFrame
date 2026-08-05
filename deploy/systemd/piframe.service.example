@@ -5,11 +5,13 @@ Wants=network-online.target
 
 [Service]
 Type=simple
-User=pi
+User=piframe
 WorkingDirectory=/opt/piframe
 Environment=PIFRAME_HOST=127.0.0.1
 Environment=PIFRAME_PORT=3040
 Environment=PIFRAME_PLATFORM=raspberry-pi
+Environment=PIFRAME_WAYLAND_DISPLAY=wayland-1
+Environment=PIFRAME_DISPLAY_CONNECTOR=HDMI-A-1
 ExecStart=/usr/bin/npm start
 Restart=always
 RestartSec=3

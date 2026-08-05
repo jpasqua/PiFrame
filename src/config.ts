@@ -6,6 +6,14 @@ export interface AppConfig {
   port: number;
   platform: "desktop" | "raspberry-pi";
   paths: AppPaths;
+  displayPower: DisplayPowerConfig;
+}
+
+export interface DisplayPowerConfig {
+  command: string;
+  connector: string;
+  waylandDisplay: string;
+  runtimeDir: string;
 }
 
 export interface AppPaths {
@@ -24,6 +32,7 @@ export interface AppPaths {
 export function loadConfig(): AppConfig {
   const cwd = process.cwd();
   const dataRoot = resolve(process.env.PIFRAME_DATA_ROOT ?? `${cwd}/data`);
+  const currentUserId = process.getuid?.() ?? 1000;
   const paths = createPaths(dataRoot);
   ensureDirectories(paths);
 
@@ -31,7 +40,13 @@ export function loadConfig(): AppConfig {
     host: process.env.PIFRAME_HOST ?? "127.0.0.1",
     port: parsePort(process.env.PIFRAME_PORT, 3040),
     platform: parsePlatform(process.env.PIFRAME_PLATFORM),
-    paths
+    paths,
+    displayPower: {
+      command: process.env.PIFRAME_WLR_RANDR_PATH ?? "wlr-randr",
+      connector: process.env.PIFRAME_DISPLAY_CONNECTOR ?? "HDMI-A-1",
+      waylandDisplay: process.env.PIFRAME_WAYLAND_DISPLAY ?? "wayland-1",
+      runtimeDir: process.env.PIFRAME_WAYLAND_RUNTIME_DIR ?? process.env.XDG_RUNTIME_DIR ?? `/run/user/${currentUserId}`
+    }
   };
 }
 

@@ -16,6 +16,7 @@ export function renderDisplayPage(settings: DisplaySettings, frame: FrameSetting
       body { margin:0; overflow:hidden; background:#000; color:#fff; font-family:Georgia,serif; }
       main { width:100vw; height:100vh; display:grid; place-items:center; background:#000; }
       #display-surface { position:relative; display:grid; place-items:center; overflow:hidden; background:#000; border:1px solid #fff; }
+      #display-surface[hidden] { display:none; }
       main.orientation-0 #display-surface, main.orientation-180 #display-surface { width:min(100vw,calc(100vh * 16 / 9)); height:min(100vh,calc(100vw * 9 / 16)); }
       main.orientation-90 #display-surface, main.orientation-270 #display-surface { width:min(100vw,calc(100vh * 9 / 16)); height:min(100vh,calc(100vw * 16 / 9)); }
       #stage-host { position:absolute; inset:0; overflow:hidden; background:#000; }

@@ -1,6 +1,7 @@
 import { createServer } from "node:http";
 import { loadConfig } from "./config.js";
 import { createAppContext } from "./data/app-context.js";
+import { DisplayPowerController } from "./services/display-power.js";
 import { cleanupStaleStagedUploads } from "./services/photo-ingestion.js";
 import { createApp } from "./web/app.js";
 
@@ -9,6 +10,7 @@ const context = createAppContext(config);
 const app = createApp(context);
 
 context.processor.processPending();
+new DisplayPowerController(config, context.settings, context.events).start();
 
 async function cleanStagedUploads(): Promise<void> {
   try {

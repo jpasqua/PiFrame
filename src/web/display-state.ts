@@ -1,30 +1,6 @@
-import type { DisplaySettings, ScheduleSettings } from "../core/settings.js";
+import type { DisplaySettings } from "../core/settings.js";
 import type { PhotoRecord } from "../data/photo-repository.js";
-
-export function isDisplayOn(settings: ScheduleSettings, now: Date, timeZone = "UTC"): boolean {
-  if (settings.overrideState === "force-on") return true;
-  if (settings.overrideState === "force-off") return false;
-  if (!settings.enabled) return true;
-  const currentMinutes = currentTimeInZone(now, timeZone);
-  const onMinutes = timeOfDayToMinutes(settings.dailyOnTime);
-  const offMinutes = timeOfDayToMinutes(settings.dailyOffTime);
-  if (onMinutes === offMinutes) return true;
-  return onMinutes < offMinutes
-    ? currentMinutes >= onMinutes && currentMinutes < offMinutes
-    : currentMinutes >= onMinutes || currentMinutes < offMinutes;
-}
-
-function currentTimeInZone(now: Date, timeZone: string): number {
-  const parts = new Intl.DateTimeFormat("en-US", {
-    timeZone,
-    hour: "2-digit",
-    minute: "2-digit",
-    hourCycle: "h23"
-  }).formatToParts(now);
-  const hour = Number(parts.find((part) => part.type === "hour")?.value ?? 0);
-  const minute = Number(parts.find((part) => part.type === "minute")?.value ?? 0);
-  return hour * 60 + minute;
-}
+export { isDisplayOn } from "../core/schedule.js";
 
 export function selectDisplayPhotos(photos: PhotoRecord[], settings: DisplaySettings, afterId: string | null): PhotoRecord[] {
   return selectDisplaySlide(photos, settings, afterId, 0).photos;
@@ -134,11 +110,6 @@ function photoShape(photo: PhotoRecord): "portrait" | "landscape" | "square" {
   if (photo.exifOrientation === 5 || photo.exifOrientation === 6 || photo.exifOrientation === 7 || photo.exifOrientation === 8 || photo.manualRotationDegrees === 90 || photo.manualRotationDegrees === 270) [width, height] = [height, width];
   const ratio = width / height;
   return ratio < .85 ? "portrait" : ratio > 1.15 ? "landscape" : "square";
-}
-
-function timeOfDayToMinutes(value: string): number {
-  const [hours, minutes] = value.split(":").map(Number);
-  return (hours ?? 0) * 60 + (minutes ?? 0);
 }
 
 function selectRandomPhotos(photos: PhotoRecord[], count: number, afterId: string | null): PhotoRecord[] {
