@@ -30,6 +30,31 @@ PiFrame is a local-first digital picture frame built with Node.js, TypeScript, S
 npm install
 ```
 
+### Raspberry Pi installation
+
+PiFrame requires Node.js 22 or newer. Raspberry Pi OS installations that provide Node 18 through the system package manager are too old for the current `better-sqlite3` and `sharp` dependencies. The following installs `nvm` for the current user, installs Node 22, and installs the project dependencies:
+
+```bash
+sudo apt update
+sudo apt install -y curl build-essential python3
+
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.6/install.sh | bash
+source ~/.bashrc
+
+nvm install 22
+nvm alias default 22
+
+node --version
+npm --version
+
+npm install
+npm run build
+```
+
+`node --version` must report `v22` (or newer) before running `npm install`. If `nvm` is not found after installation, open a new SSH session or terminal and try again. The `nvm` installer and update instructions are maintained by the [official nvm project](https://github.com/nvm-sh/nvm#installing-and-updating).
+
+`nvm` installs Node and npm for one Linux user. If PiFrame is run by systemd, the service must run as that same user and use the Node 22 npm path. After installing Node, run `command -v npm` as the service user and replace the `ExecStart` value in `deploy/systemd/piframe.service.example` with that absolute path followed by `start`.
+
 ## Build, Run, and Test
 
 ### Development
