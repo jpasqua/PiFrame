@@ -30,30 +30,115 @@ PiFrame is a local-first digital picture frame built with Node.js, TypeScript, S
 npm install
 ```
 
-### Raspberry Pi installation
+### Raspberry Pi developer setup
 
-PiFrame requires Node.js 22 or newer. Raspberry Pi OS installations that provide Node 18 through the system package manager are too old for the current `better-sqlite3` and `sharp` dependencies. The following installs `nvm` for the current user, installs Node 22, and installs the project dependencies:
+This path is for a developer setting up a Pi directly from GitHub. It is
+separate from the offline USB provisioning path described in
+[docs/PiImageBuild.md](docs/PiImageBuild.md).
 
-```bash
-sudo apt update
-sudo apt install -y curl build-essential python3
+1. Use Raspberry Pi Imager to write the full 64-bit Raspberry Pi OS desktop
+   image. In its customisation settings, choose a hostname unique on the
+   developer's network (for example `piframe-joe`), create the `piframe` user,
+   set Wi-Fi country/locale/time zone, configure Wi-Fi, and optionally enable
+   SSH.
+2. Boot the Pi and log in as `piframe`.
+3. Update the OS and install build/runtime prerequisites:
 
-curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.6/install.sh | bash
-source ~/.bashrc
+   ```bash
+   sudo apt update
+   sudo apt full-upgrade -y
+   sudo apt install -y avahi-daemon build-essential curl git python3 wlr-randr
+   ```
 
-nvm install 22
-nvm alias default 22
+   Reboot after the OS upgrade, then log back in as `piframe`:
 
-node --version
-npm --version
+   ```bash
+   sudo reboot
+   ```
 
-npm install
-npm run build
-```
+4. Install Node 22, then clone, build, and verify PiFrame. Run these commands
+   as `piframe`, without `sudo`:
 
-`node --version` must report `v22` (or newer) before running `npm install`. If `nvm` is not found after installation, open a new SSH session or terminal and try again. The `nvm` installer and update instructions are maintained by the [official nvm project](https://github.com/nvm-sh/nvm#installing-and-updating).
+   ```bash
+   curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.6/install.sh | bash
+   source "$HOME/.bashrc"
 
-`nvm` installs Node and npm for one Linux user. If PiFrame is run by systemd, the service must run as that same user and use the Node 22 npm path. After installing Node, run `command -v npm` as the service user and replace the `ExecStart` value in `deploy/systemd/piframe.service.example` with that absolute path followed by `start`.
+   nvm install 22
+   nvm alias default 22
+   node --version
+   npm --version
+
+   sudo git clone https://github.com/jpasqua/PiFrame.git /opt/piframe
+   sudo chown -R piframe:piframe /opt/piframe
+   cd /opt/piframe
+   npm ci
+   npm run check
+   npm run build
+   ```
+
+   `node --version` must report `v22` (or newer). The `nvm` installer and
+   update instructions are maintained by the [official nvm
+   project](https://github.com/nvm-sh/nvm#installing-and-updating).
+
+5. Install the service and kiosk autostart files. First obtain the absolute
+   Node path and the `piframe` UID:
+
+   ```bash
+   NODE_PATH="$(command -v node)"
+   PIFRAME_UID="$(id -u piframe)"
+   printf '%s\n' "$NODE_PATH" "$PIFRAME_UID"
+   ```
+
+   Then install the templates and replace `ExecStart` with the Node path shown
+   above. This is necessary because a systemd service does not load `nvm` from
+   `.bashrc`:
+
+   ```bash
+   sudo install -D -m 0644 \
+     /opt/piframe/deploy/systemd/piframe.service.example \
+     /etc/systemd/system/piframe.service
+   sudo sed -i "s|^User=.*|User=piframe|" \
+     /etc/systemd/system/piframe.service
+   sudo sed -i "s|^Environment=PIFRAME_HOST=.*|Environment=PIFRAME_HOST=0.0.0.0|" \
+     /etc/systemd/system/piframe.service
+   sudo sed -i "s|^ExecStart=.*|ExecStart=${NODE_PATH} /opt/piframe/dist/server.js|" \
+     /etc/systemd/system/piframe.service
+   sudo sed -i \
+     "/^Environment=PIFRAME_WAYLAND_DISPLAY=/a Environment=PIFRAME_WAYLAND_RUNTIME_DIR=/run/user/${PIFRAME_UID}" \
+     /etc/systemd/system/piframe.service
+
+   install -D -m 0644 \
+     /opt/piframe/deploy/autostart/piframe-kiosk.desktop.example \
+     "$HOME/.config/autostart/piframe-kiosk.desktop"
+
+   sudo systemctl daemon-reload
+   sudo systemctl enable --now piframe.service
+   sleep 5
+   curl -fsS http://127.0.0.1:3040/health
+   ```
+
+   The developer setup deliberately listens on the local network, so the owner
+   workspace can be opened from another trusted machine at
+   `http://<pi-hostname>.local:3040`. PiFrame does not yet authenticate owner
+   access, so leave this setting enabled only on a trusted development network.
+
+   Confirm the display connector with `kmsprint | grep Connector`. The service
+   template defaults to `HDMI-A-1`; update its
+   `PIFRAME_DISPLAY_CONNECTOR` value if the Pi reports a different connector.
+   Reboot to verify kiosk startup:
+
+   ```bash
+   sudo reboot
+   ```
+
+   With Raspberry Pi OS configured for graphical autologin as `piframe`, the
+   HDMI screen should automatically leave the desktop and show Chromium
+   full-screen at PiFrame's `/display` view. It may take several seconds after
+   login for the service and browser to start. The kiosk launcher uses a
+   dedicated Chromium profile and Chromium's basic password store so graphical
+   autologin does not trigger a desktop keyring dialog. If the desktop remains
+   visible, inspect `piframe.service` and confirm that
+   `~/.config/autostart/piframe-kiosk.desktop` belongs to `piframe`.
 
 ## Build, Run, and Test
 
@@ -79,6 +164,9 @@ Useful environment variables:
 * `PIFRAME_PORT` defaults to `3040`
 * `PIFRAME_DATA_ROOT` defaults to `./data`
 * `PIFRAME_PLATFORM` accepts `desktop` or `raspberry-pi`
+* `PIFRAME_DISPLAY_CONNECTOR` defaults to `HDMI-A-1` when running in Raspberry Pi mode
+* `PIFRAME_WAYLAND_DISPLAY` defaults to `wayland-1` when running in Raspberry Pi mode
+* `PIFRAME_WAYLAND_RUNTIME_DIR` defaults to the current user's Wayland runtime directory
 
 Example:
 
@@ -139,14 +227,22 @@ data/
 
 Original uploads are retained separately from generated assets. Generated thumbnails and display images are rebuildable. The `tmp/` directory is used to stage streamed uploads; stale staged files are periodically cleaned up.
 
-## Raspberry Pi Kiosk Templates
+## Raspberry Pi runtime notes
 
-The repository includes templates but does not install or enable them automatically:
+The developer setup above installs
+`deploy/systemd/piframe.service.example` and
+`deploy/autostart/piframe-kiosk.desktop.example`. It changes the template's
+default loopback binding to LAN access for trusted developer testing; Chromium
+remains the local kiosk client.
 
-* `deploy/systemd/piframe.service.example` runs the built server as the `pi` user on loopback.
-* `deploy/autostart/piframe-kiosk.desktop.example` starts Chromium in kiosk mode at `/display`.
-
-Before using them, update `WorkingDirectory` and `User` for the target Pi. Confirm the Chromium executable with `command -v chromium`; some Raspberry Pi OS versions use `chromium-browser`.
+When `PIFRAME_PLATFORM=raspberry-pi`, PiFrame reconciles the saved schedule
+every five seconds and controls the configured Wayland HDMI connector with
+`wlr-randr`. It runs `--off` when the schedule turns off and `--on` when it
+turns on; it does not repeatedly invoke the command while the desired state is
+unchanged. The service must run as the same `piframe` desktop user that owns
+the Wayland session. PiFrame derives that user's runtime directory as
+`/run/user/<UID>` by default; set `PIFRAME_WAYLAND_RUNTIME_DIR` only if the OS
+image uses a different location.
 
 ## Project Layout
 
