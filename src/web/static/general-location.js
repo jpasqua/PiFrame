@@ -67,7 +67,7 @@ if (locationInput && timeZoneInput && locateButton && searchButton && status && 
 
   function locateFrame() {
     if (!window.isSecureContext) {
-      setStatus("This browser requires a secure context for location. Open PiFrame at http://127.0.0.1:3040 or http://localhost:3040.");
+      setStatus("This browser requires a secure context for location. Open PiFrame at http://127.0.0.1 or http://localhost.");
       return;
     }
     if (!navigator.geolocation) {
