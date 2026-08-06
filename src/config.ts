@@ -33,13 +33,14 @@ export function loadConfig(): AppConfig {
   const cwd = process.cwd();
   const dataRoot = resolve(process.env.PIFRAME_DATA_ROOT ?? `${cwd}/data`);
   const currentUserId = process.getuid?.() ?? 1000;
+  const platform = parsePlatform(process.env.PIFRAME_PLATFORM);
   const paths = createPaths(dataRoot);
   ensureDirectories(paths);
 
   return {
     host: process.env.PIFRAME_HOST ?? "127.0.0.1",
-    port: parsePort(process.env.PIFRAME_PORT, 3040),
-    platform: parsePlatform(process.env.PIFRAME_PLATFORM),
+    port: parsePort(process.env.PIFRAME_PORT, platform === "raspberry-pi" ? 80 : 3040),
+    platform,
     paths,
     displayPower: {
       command: process.env.PIFRAME_WLR_RANDR_PATH ?? "wlr-randr",

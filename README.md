@@ -120,12 +120,12 @@ separate from the offline USB provisioning path described in
    sudo systemctl daemon-reload
    sudo systemctl enable --now piframe.service
    sleep 5
-   curl -fsS http://127.0.0.1:3040/health
+   curl -fsS http://127.0.0.1/health
    ```
 
    The developer setup deliberately listens on the local network, so the owner
    workspace can be opened from another trusted machine at
-   `http://<pi-hostname>.local:3040`. PiFrame does not yet authenticate owner
+   `http://<pi-hostname>.local`. PiFrame does not yet authenticate owner
    access, so leave this setting enabled only on a trusted development network.
 
    PiFrame automatically discovers the active `wayland-*` socket and a single
@@ -163,12 +163,12 @@ npm run dev:watch
 
 Open the owner workspace at [http://127.0.0.1:3040](http://127.0.0.1:3040). Open the frame view at [http://127.0.0.1:3040/display](http://127.0.0.1:3040/display).
 
-By default, PiFrame uses `127.0.0.1`, port `3040`, and the local `./data` directory. It intentionally does not bind to `0.0.0.0`.
+Desktop development uses `127.0.0.1`, port `3040`, and the local `./data` directory by default. The Raspberry Pi service uses port `80`, so an owner can open `http://<pi-hostname>.local` without a port suffix. It intentionally does not bind to `0.0.0.0` outside the Pi deployment setup.
 
 Useful environment variables:
 
 * `PIFRAME_HOST` defaults to `127.0.0.1`
-* `PIFRAME_PORT` defaults to `3040`
+* `PIFRAME_PORT` defaults to `3040` for desktop mode and `80` for Raspberry Pi mode
 * `PIFRAME_DATA_ROOT` defaults to `./data`
 * `PIFRAME_PLATFORM` accepts `desktop` or `raspberry-pi`
 * `PIFRAME_DISPLAY_CONNECTOR` optionally overrides automatic HDMI-output discovery

@@ -1,5 +1,5 @@
 [Desktop Entry]
 Type=Application
 Name=PiFrame Kiosk
-Exec=chromium --kiosk --app=http://127.0.0.1:3040/display --noerrdialogs --disable-session-crashed-bubble --password-store=basic --user-data-dir=/home/piframe/.local/share/piframe-kiosk
+Exec=chromium --kiosk --app=http://127.0.0.1/display --noerrdialogs --disable-session-crashed-bubble --password-store=basic --user-data-dir=/home/piframe/.local/share/piframe-kiosk
 X-GNOME-Autostart-enabled=true
