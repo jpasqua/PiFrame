@@ -120,12 +120,10 @@ separate from the offline USB provisioning path described in
    `http://<pi-hostname>.local:3040`. PiFrame does not yet authenticate owner
    access, so leave this setting enabled only on a trusted development network.
 
-   Confirm the display connector with `kmsprint | grep Connector`. The service
-   template defaults to `HDMI-A-1`; update its
-   `PIFRAME_DISPLAY_CONNECTOR` value if the Pi reports a different connector.
-   PiFrame automatically discovers the active `wayland-*` socket beneath the
-   configured runtime directory. Set `PIFRAME_WAYLAND_DISPLAY` only to override
-   that discovery for an unusual desktop configuration.
+   PiFrame automatically discovers the active `wayland-*` socket and a single
+   HDMI output. Set `PIFRAME_WAYLAND_DISPLAY` or
+   `PIFRAME_DISPLAY_CONNECTOR` only to override discovery for an unusual
+   desktop configuration, such as more than one attached HDMI display.
    Reboot to verify kiosk startup:
 
    ```bash
@@ -165,7 +163,7 @@ Useful environment variables:
 * `PIFRAME_PORT` defaults to `3040`
 * `PIFRAME_DATA_ROOT` defaults to `./data`
 * `PIFRAME_PLATFORM` accepts `desktop` or `raspberry-pi`
-* `PIFRAME_DISPLAY_CONNECTOR` defaults to `HDMI-A-1` when running in Raspberry Pi mode
+* `PIFRAME_DISPLAY_CONNECTOR` optionally overrides automatic HDMI-output discovery
 * `PIFRAME_WAYLAND_DISPLAY` optionally overrides automatic Wayland socket discovery
 * `PIFRAME_WAYLAND_RUNTIME_DIR` defaults to the current user's Wayland runtime directory
 

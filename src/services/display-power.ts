@@ -14,6 +14,7 @@ const RECONCILE_INTERVAL_MS = 5_000;
 export class DisplayPowerController {
   private appliedState: boolean | null = null;
   private lastFailedState: boolean | null = null;
+  private resolvedConnector: string | null = null;
 
   constructor(
     private readonly config: AppConfig,
@@ -33,36 +34,66 @@ export class DisplayPowerController {
     const shouldBeOn = isDisplayOn(schedule, new Date(), frame.timeZone);
     if (shouldBeOn === this.appliedState) return;
 
-    let lastError: unknown;
+    let lastError: unknown = new Error("No usable Wayland display found");
+    const attemptedConnectors = new Set<string>();
     for (const waylandDisplay of this.waylandDisplays()) {
-      try {
-        await execFileAsync(this.config.displayPower.command, ["--output", this.config.displayPower.connector, shouldBeOn ? "--on" : "--off"], {
-          env: {
-            ...process.env,
-            WAYLAND_DISPLAY: waylandDisplay,
-            XDG_RUNTIME_DIR: this.config.displayPower.runtimeDir
-          },
-          timeout: 10_000
-        });
-        this.appliedState = shouldBeOn;
-        this.lastFailedState = null;
-        this.events.record("info", shouldBeOn ? "display.power_on" : "display.power_off", shouldBeOn ? "Enabled the HDMI display." : "Disabled the HDMI display.", {
-          connector: this.config.displayPower.connector,
-          waylandDisplay
-        });
-        return;
-      } catch (error) {
-        lastError = error;
+      const connectors = await this.connectorsForDisplay(waylandDisplay);
+      for (const connector of connectors) {
+        attemptedConnectors.add(connector);
+        try {
+          await this.runWlrRandr(waylandDisplay, ["--output", connector, shouldBeOn ? "--on" : "--off"]);
+          this.resolvedConnector = connector;
+          this.appliedState = shouldBeOn;
+          this.lastFailedState = null;
+          this.events.record("info", shouldBeOn ? "display.power_on" : "display.power_off", shouldBeOn ? "Enabled the HDMI display." : "Disabled the HDMI display.", {
+            connector,
+            waylandDisplay
+          });
+          return;
+        } catch (error) {
+          lastError = error;
+        }
       }
     }
 
     if (this.lastFailedState === shouldBeOn) return;
     this.lastFailedState = shouldBeOn;
     this.events.record("error", "display.power_failed", "Could not change HDMI display power.", {
-      connector: this.config.displayPower.connector,
       requestedState: shouldBeOn ? "on" : "off",
       waylandDisplays: this.waylandDisplays(),
-      error: lastError instanceof Error ? lastError.message : "No usable Wayland display found"
+      attemptedConnectors: [...attemptedConnectors],
+      error: lastError instanceof Error ? lastError.message : "Unknown error"
+    });
+  }
+
+  private async connectorsForDisplay(waylandDisplay: string): Promise<string[]> {
+    const automatic = await this.detectConnector(waylandDisplay);
+    const candidates = [this.config.displayPower.connector, this.resolvedConnector, automatic]
+      .filter((connector): connector is string => typeof connector === "string" && connector.length > 0);
+    return [...new Set(candidates)];
+  }
+
+  private async detectConnector(waylandDisplay: string): Promise<string | null> {
+    try {
+      const { stdout } = await this.runWlrRandr(waylandDisplay, ["--json"]);
+      const outputs = parseOutputs(stdout).filter((output) => /^HDMI-A-\d+$/.test(output.name));
+      const enabled = outputs.filter((output) => output.enabled);
+      if (enabled.length === 1) return enabled[0]!.name;
+      if (outputs.length === 1) return outputs[0]!.name;
+      return null;
+    } catch {
+      return null;
+    }
+  }
+
+  private runWlrRandr(waylandDisplay: string, args: string[]) {
+    return execFileAsync(this.config.displayPower.command, args, {
+      env: {
+        ...process.env,
+        WAYLAND_DISPLAY: waylandDisplay,
+        XDG_RUNTIME_DIR: this.config.displayPower.runtimeDir
+      },
+      timeout: 10_000
     });
   }
 
@@ -80,5 +111,19 @@ export class DisplayPowerController {
     } catch {
       return [];
     }
+  }
+}
+
+function parseOutputs(raw: string): Array<{ name: string; enabled: boolean }> {
+  try {
+    const value: unknown = JSON.parse(raw);
+    if (!Array.isArray(value)) return [];
+    return value.flatMap((output) => {
+      if (!output || typeof output !== "object") return [];
+      const record = output as { name?: unknown; enabled?: unknown };
+      return typeof record.name === "string" ? [{ name: record.name, enabled: record.enabled === true }] : [];
+    });
+  } catch {
+    return [];
   }
 }
