@@ -3,6 +3,10 @@ const timeZoneInput = document.querySelector("#frame-time-zone");
 const searchButton = document.querySelector("#search-location");
 const status = document.querySelector("#location-lookup-status");
 const results = document.querySelector("#location-search-results");
+const postalCodeLocationOverrides = new Map([
+  ["93921", "Carmel, CA"],
+  ["93923", "Carmel, CA"]
+]);
 
 if (locationInput && timeZoneInput && searchButton && status && results) {
 
@@ -23,9 +27,25 @@ if (locationInput && timeZoneInput && searchButton && status && results) {
     setStatus(`Using ${locationInput.value}. Confirm the advanced values if needed, then save General settings.`);
   }
 
+  async function searchOpenMeteo(query, language) {
+    const response = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(query)}&count=5&language=${encodeURIComponent(language)}`, { cache: "no-store" });
+    if (!response.ok) throw new Error("Location search failed");
+    const payload = await response.json();
+    return Array.isArray(payload.results) ? payload.results : [];
+  }
+
+  function trailingPostalCode(value) {
+    const match = value.match(/(?:^|[\s,])(\d{5})(?:-\d{4})?$/);
+    return match?.[1] ?? null;
+  }
+
+  function withoutTrailingPostalCode(value) {
+    return value.replace(/(?:,?\s+)\d{5}(?:-\d{4})?$/, "").trim();
+  }
+
   async function searchLocation() {
-    const query = locationInput.value.trim();
-    if (query.length < 2) {
+    const enteredLocation = locationInput.value.trim();
+    if (enteredLocation.length < 2) {
       setStatus("Enter at least two characters to search for a location.");
       return;
     }
@@ -35,9 +55,21 @@ if (locationInput && timeZoneInput && searchButton && status && results) {
     setStatus("Searching for locations...");
     try {
       const language = (navigator.language || "en").split("-")[0];
-      const response = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(query)}&count=5&language=${encodeURIComponent(language)}`, { cache: "no-store" });
-      const payload = await response.json();
-      const matches = Array.isArray(payload.results) ? payload.results : [];
+      const postalCode = trailingPostalCode(enteredLocation);
+      let matches = await searchOpenMeteo(enteredLocation, language);
+
+      if (matches.length === 0 && postalCode) {
+        const locationWithoutPostalCode = withoutTrailingPostalCode(enteredLocation);
+        if (locationWithoutPostalCode && locationWithoutPostalCode !== enteredLocation) {
+          matches = await searchOpenMeteo(locationWithoutPostalCode, language);
+        }
+      }
+
+      if (matches.length === 0 && postalCode) {
+        const overrideLocation = postalCodeLocationOverrides.get(postalCode);
+        if (overrideLocation) matches = await searchOpenMeteo(overrideLocation, language);
+      }
+
       if (matches.length === 0) {
         setStatus("No matching locations found. Try adding a region or country.");
         return;
