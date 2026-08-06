@@ -13,8 +13,8 @@ export function renderDisplayPage(settings: DisplaySettings, frame: FrameSetting
     <title>PiFrame Display</title>
     <style>
       :root { color-scheme:dark; background:#000; } * { box-sizing:border-box; }
+      html, body, body * { cursor:none !important; }
       body { margin:0; overflow:hidden; background:#000; color:#fff; font-family:Georgia,serif; }
-      body.cursor-hidden, body.cursor-hidden * { cursor:none !important; }
       main { width:100vw; height:100vh; display:grid; place-items:center; background:#000; }
       #display-surface { position:relative; display:grid; place-items:center; overflow:hidden; background:#000; border:1px solid #fff; }
       #display-surface[hidden] { display:none; }
@@ -63,17 +63,6 @@ export function renderDisplayPage(settings: DisplaySettings, frame: FrameSetting
       let scheduleOff = false;
       let advanceTimer = null;
       let advancing = false;
-      let cursorTimer = null;
-
-      function hideCursor() {
-        document.body.classList.add("cursor-hidden");
-      }
-
-      function showCursorTemporarily() {
-        document.body.classList.remove("cursor-hidden");
-        if (cursorTimer) clearTimeout(cursorTimer);
-        cursorTimer = setTimeout(hideCursor, 1500);
-      }
 
       function scheduleAdvance(delay) {
         if (advanceTimer) clearTimeout(advanceTimer);
@@ -234,9 +223,6 @@ export function renderDisplayPage(settings: DisplaySettings, frame: FrameSetting
       }
 
       advance();
-      hideCursor();
-      document.addEventListener("pointermove", showCursorTemporarily);
-      document.addEventListener("pointerdown", showCursorTemporarily);
       setInterval(pollSchedule, 5000);
       updateClock();
       setInterval(updateClock, 1000);
