@@ -32,11 +32,11 @@ export function renderSystemActionPage(action: "restart" | "shutdown"): string {
             setTimeout(check, delay);
           });
       };
-      setTimeout(check, 10000);
+      setTimeout(check, 60000);
     })();
   </script>` : "";
   const reconnectControls = restarting
-    ? `<p id="reconnect-status" class="status" aria-live="polite">Waiting 10 seconds before checking for PiFrame…</p><p><a href="/?view=status">Try again</a></p>`
+    ? `<p id="reconnect-status" class="status" aria-live="polite">Waiting 60 seconds before checking for PiFrame…</p><p><a href="/?view=status">Try again</a></p>`
     : "";
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${title} - PiFrame</title><style>body{margin:0;color:#4d535c;font-family:Georgia,"Times New Roman",serif;background:linear-gradient(180deg,#fafafa 0,#f3f4f5 100%)}main{max-width:760px;min-height:100vh;margin:auto;padding:34px 20px}.card{margin-top:38px;padding:26px;background:#fff;border:1px solid #dedfe2;border-radius:12px;box-shadow:0 8px 20px rgba(43,49,58,.05)}h1{margin:0 0 10px;font-size:clamp(2rem,5vw,3.4rem);letter-spacing:-.05em}p{color:#6e757f;line-height:1.55}.status{font-weight:700;color:#157b6d;margin-top:24px}a{color:#0d7284}</style></head><body><main>${renderLogo(160)}<section class="card"><h1>${heading}</h1><p>${description}</p>${reconnectControls}</section></main>${reconnectScript}</body></html>`;
 }
