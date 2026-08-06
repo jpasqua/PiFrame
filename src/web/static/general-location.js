@@ -1,11 +1,10 @@
 const locationInput = document.querySelector("#frame-location");
 const timeZoneInput = document.querySelector("#frame-time-zone");
-const locateButton = document.querySelector("#locate-frame");
 const searchButton = document.querySelector("#search-location");
 const status = document.querySelector("#location-lookup-status");
 const results = document.querySelector("#location-search-results");
 
-if (locationInput && timeZoneInput && locateButton && searchButton && status && results) {
+if (locationInput && timeZoneInput && searchButton && status && results) {
 
   function setStatus(message) {
     status.textContent = message;
@@ -65,50 +64,5 @@ if (locationInput && timeZoneInput && locateButton && searchButton && status && 
     }
   }
 
-  function locateFrame() {
-    if (!window.isSecureContext) {
-      setStatus("This browser requires a secure context for location. Open PiFrame at http://127.0.0.1 or http://localhost.");
-      return;
-    }
-    if (!navigator.geolocation) {
-      setStatus("This browser cannot provide location. Search or enter it manually instead.");
-      return;
-    }
-    locateButton.disabled = true;
-    clearResults();
-    setStatus("Requesting this browser's location...");
-    navigator.geolocation.getCurrentPosition(async (position) => {
-      const { latitude, longitude } = position.coords;
-      locationInput.value = `Current location (${latitude.toFixed(3)}, ${longitude.toFixed(3)})`;
-      const reverseLookup = fetch("/api/location/reverse", {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded", "Accept": "application/json" },
-        body: new URLSearchParams({ latitude: String(latitude), longitude: String(longitude) })
-      }).then(async (response) => response.ok ? response.json() : Promise.reject(new Error("Reverse lookup failed")));
-      const timeZoneLookup = fetch(`https://api.open-meteo.com/v1/forecast?latitude=${encodeURIComponent(latitude)}&longitude=${encodeURIComponent(longitude)}&current=temperature_2m&timezone=auto`, { cache: "no-store" }).then(async (response) => response.ok ? response.json() : Promise.reject(new Error("Time zone lookup failed")));
-      const [place, timeZone] = await Promise.allSettled([reverseLookup, timeZoneLookup]);
-      if (place.status === "fulfilled") applyLocation(place.value);
-      if (timeZone.status === "fulfilled" && timeZone.value.timezone) timeZoneInput.value = timeZone.value.timezone;
-      locateButton.disabled = false;
-      if (place.status === "fulfilled") {
-        setStatus(`Using ${locationInput.value}. Confirm the advanced time zone if needed, then save General settings.`);
-      } else {
-        setStatus("Used this device's coordinates. Confirm the advanced time zone before saving.");
-      }
-    }, (error) => {
-      locateButton.disabled = false;
-      if (error.code === error.PERMISSION_DENIED) {
-        setStatus("Browser location permission was denied. Enable Location Services for this browser in macOS Privacy & Security, then allow this site and try again.");
-      } else if (error.code === error.POSITION_UNAVAILABLE) {
-        setStatus("This browser could not determine a location. Check the network connection or search for the location manually.");
-      } else if (error.code === error.TIMEOUT) {
-        setStatus("Location lookup timed out. Try again or search for the location manually.");
-      } else {
-        setStatus("This browser could not determine a location. Search or enter it manually instead.");
-      }
-    }, { enableHighAccuracy: false, timeout: 10_000, maximumAge: 300_000 });
-  }
-
   searchButton.addEventListener("click", searchLocation);
-  locateButton.addEventListener("click", locateFrame);
 }

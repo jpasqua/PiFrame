@@ -1,8 +1,11 @@
-.location-actions { display:flex; flex-wrap:wrap; gap:8px; }
+.location-field { display:grid; gap:8px; max-width:570px; }
+.location-label { display:flex; align-items:center; gap:6px; font-weight:700; }
+.location-info { display:inline-grid; place-items:center; width:17px; height:17px; padding:0; border:1px solid var(--muted); border-radius:50%; color:var(--muted); background:transparent; font:700 12px/1 Georgia, "Times New Roman", serif; cursor:help; }
+.location-input-row { display:flex; gap:8px; }
+.location-input-row input { min-width:0; flex:1; padding:10px 12px; border:1px solid #cdd0d4; border-radius:6px; background:#fff; font:inherit; }
 .secondary-action { border:1px solid var(--line); border-radius:5px; padding:8px 11px; color:var(--ink); background:#f6f7f8; font:inherit; cursor:pointer; }
 .secondary-action:hover { color:var(--accent); background:#eff8fa; }
-.location-status,.location-disclosure { margin:0; }
-.location-disclosure { color:var(--muted); font-size:.82rem; }
+.location-status { margin:0; }
 .location-results { display:grid; gap:7px; max-width:570px; }
 .location-result { display:flex; justify-content:space-between; gap:12px; padding:10px 12px; border:1px solid var(--line); border-radius:7px; background:#fff; text-align:left; color:var(--ink); font:inherit; cursor:pointer; }
 .location-result:hover { border-color:#8ac4cf; background:#f5fbfc; }
@@ -10,3 +13,4 @@
 .advanced-location { max-width:570px; color:var(--ink); }
 .advanced-location summary { cursor:pointer; font-weight:700; }
 .advanced-location-fields { display:grid; gap:12px; margin-top:14px; }
+@media (max-width:560px) { .location-input-row { align-items:stretch; flex-direction:column; } }
