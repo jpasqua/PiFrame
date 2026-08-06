@@ -1,4 +1,5 @@
 import { execFile } from "node:child_process";
+import { readdirSync } from "node:fs";
 import { promisify } from "node:util";
 import { isDisplayOn } from "../core/schedule.js";
 import { createDefaultFrameSettings, createDefaultScheduleSettings, type FrameSettings, type ScheduleSettings } from "../core/settings.js";
@@ -32,28 +33,52 @@ export class DisplayPowerController {
     const shouldBeOn = isDisplayOn(schedule, new Date(), frame.timeZone);
     if (shouldBeOn === this.appliedState) return;
 
+    let lastError: unknown;
+    for (const waylandDisplay of this.waylandDisplays()) {
+      try {
+        await execFileAsync(this.config.displayPower.command, ["--output", this.config.displayPower.connector, shouldBeOn ? "--on" : "--off"], {
+          env: {
+            ...process.env,
+            WAYLAND_DISPLAY: waylandDisplay,
+            XDG_RUNTIME_DIR: this.config.displayPower.runtimeDir
+          },
+          timeout: 10_000
+        });
+        this.appliedState = shouldBeOn;
+        this.lastFailedState = null;
+        this.events.record("info", shouldBeOn ? "display.power_on" : "display.power_off", shouldBeOn ? "Enabled the HDMI display." : "Disabled the HDMI display.", {
+          connector: this.config.displayPower.connector,
+          waylandDisplay
+        });
+        return;
+      } catch (error) {
+        lastError = error;
+      }
+    }
+
+    if (this.lastFailedState === shouldBeOn) return;
+    this.lastFailedState = shouldBeOn;
+    this.events.record("error", "display.power_failed", "Could not change HDMI display power.", {
+      connector: this.config.displayPower.connector,
+      requestedState: shouldBeOn ? "on" : "off",
+      waylandDisplays: this.waylandDisplays(),
+      error: lastError instanceof Error ? lastError.message : "No usable Wayland display found"
+    });
+  }
+
+  private waylandDisplays(): string[] {
+    const detected = this.detectWaylandDisplays();
+    return [...new Set([this.config.displayPower.waylandDisplay, ...detected].filter(Boolean))];
+  }
+
+  private detectWaylandDisplays(): string[] {
     try {
-      await execFileAsync(this.config.displayPower.command, ["--output", this.config.displayPower.connector, shouldBeOn ? "--on" : "--off"], {
-        env: {
-          ...process.env,
-          WAYLAND_DISPLAY: this.config.displayPower.waylandDisplay,
-          XDG_RUNTIME_DIR: this.config.displayPower.runtimeDir
-        },
-        timeout: 10_000
-      });
-      this.appliedState = shouldBeOn;
-      this.lastFailedState = null;
-      this.events.record("info", shouldBeOn ? "display.power_on" : "display.power_off", shouldBeOn ? "Enabled the HDMI display." : "Disabled the HDMI display.", {
-        connector: this.config.displayPower.connector
-      });
-    } catch (error) {
-      if (this.lastFailedState === shouldBeOn) return;
-      this.lastFailedState = shouldBeOn;
-      this.events.record("error", "display.power_failed", "Could not change HDMI display power.", {
-        connector: this.config.displayPower.connector,
-        requestedState: shouldBeOn ? "on" : "off",
-        error: error instanceof Error ? error.message : "Unknown error"
-      });
+      return readdirSync(this.config.displayPower.runtimeDir, { withFileTypes: true })
+        .filter((entry) => entry.isSocket() && /^wayland-\d+$/.test(entry.name))
+        .map((entry) => entry.name)
+        .sort();
+    } catch {
+      return [];
     }
   }
 }

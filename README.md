@@ -26,10 +26,6 @@ PiFrame is a local-first digital picture frame built with Node.js, TypeScript, S
 
 ## Install
 
-```bash
-npm install
-```
-
 ### Raspberry Pi developer setup
 
 This path is for a developer setting up a Pi directly from GitHub. It is
@@ -53,7 +49,7 @@ separate from the offline USB provisioning path described in
    Reboot after the OS upgrade, then log back in as `piframe`:
 
    ```bash
-   sudo reboot
+   sudo reboot now
    ```
 
 4. Install Node 22, then clone, build, and verify PiFrame. Run these commands
@@ -103,8 +99,10 @@ separate from the offline USB provisioning path described in
      /etc/systemd/system/piframe.service
    sudo sed -i "s|^ExecStart=.*|ExecStart=${NODE_PATH} /opt/piframe/dist/server.js|" \
      /etc/systemd/system/piframe.service
+   sudo sed -i '/^Environment=PIFRAME_WAYLAND_DISPLAY=/d; /^Environment=PIFRAME_WAYLAND_RUNTIME_DIR=/d' \
+     /etc/systemd/system/piframe.service
    sudo sed -i \
-     "/^Environment=PIFRAME_WAYLAND_DISPLAY=/a Environment=PIFRAME_WAYLAND_RUNTIME_DIR=/run/user/${PIFRAME_UID}" \
+     "/^Environment=PIFRAME_PLATFORM=/a Environment=PIFRAME_WAYLAND_RUNTIME_DIR=/run/user/${PIFRAME_UID}" \
      /etc/systemd/system/piframe.service
 
    install -D -m 0644 \
@@ -125,6 +123,9 @@ separate from the offline USB provisioning path described in
    Confirm the display connector with `kmsprint | grep Connector`. The service
    template defaults to `HDMI-A-1`; update its
    `PIFRAME_DISPLAY_CONNECTOR` value if the Pi reports a different connector.
+   PiFrame automatically discovers the active `wayland-*` socket beneath the
+   configured runtime directory. Set `PIFRAME_WAYLAND_DISPLAY` only to override
+   that discovery for an unusual desktop configuration.
    Reboot to verify kiosk startup:
 
    ```bash
@@ -165,7 +166,7 @@ Useful environment variables:
 * `PIFRAME_DATA_ROOT` defaults to `./data`
 * `PIFRAME_PLATFORM` accepts `desktop` or `raspberry-pi`
 * `PIFRAME_DISPLAY_CONNECTOR` defaults to `HDMI-A-1` when running in Raspberry Pi mode
-* `PIFRAME_WAYLAND_DISPLAY` defaults to `wayland-1` when running in Raspberry Pi mode
+* `PIFRAME_WAYLAND_DISPLAY` optionally overrides automatic Wayland socket discovery
 * `PIFRAME_WAYLAND_RUNTIME_DIR` defaults to the current user's Wayland runtime directory
 
 Example:

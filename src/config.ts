@@ -44,7 +44,7 @@ export function loadConfig(): AppConfig {
     displayPower: {
       command: process.env.PIFRAME_WLR_RANDR_PATH ?? "wlr-randr",
       connector: process.env.PIFRAME_DISPLAY_CONNECTOR ?? "HDMI-A-1",
-      waylandDisplay: process.env.PIFRAME_WAYLAND_DISPLAY ?? "wayland-1",
+      waylandDisplay: process.env.PIFRAME_WAYLAND_DISPLAY ?? "",
       runtimeDir: process.env.PIFRAME_WAYLAND_RUNTIME_DIR ?? process.env.XDG_RUNTIME_DIR ?? `/run/user/${currentUserId}`
     }
   };
