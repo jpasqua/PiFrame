@@ -15,6 +15,14 @@ export class SystemActionService {
     if (this.config.platform !== "raspberry-pi") return false;
 
     this.events.record("info", `system.${action}_requested`, action === "restart" ? "Pi restart requested." : "Pi shutdown requested.", {});
+    // Let the HTTP response containing the transition page reach the browser before
+    // systemd stops the server and network services.
+    const timer = setTimeout(() => this.execute(action), 750);
+    timer.unref();
+    return true;
+  }
+
+  private execute(action: SystemAction): void {
     const child = spawn("/usr/bin/sudo", ["-n", "/usr/local/sbin/piframe-system-action", action], {
       detached: true,
       stdio: "ignore"
@@ -32,6 +40,5 @@ export class SystemActionService {
       });
     });
     child.unref();
-    return true;
   }
 }

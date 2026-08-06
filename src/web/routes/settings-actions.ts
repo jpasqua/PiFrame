@@ -10,8 +10,9 @@ import type { AppContext } from "../../data/app-context.js";
 import { type SystemAction, SystemActionService } from "../../services/system-actions.js";
 import { readForm } from "../http/forms.js";
 import { isTrustedOrigin } from "../http/request.js";
-import { redirect, sendPlainText } from "../http/responses.js";
+import { redirect, sendHtml, sendPlainText } from "../http/responses.js";
 import { settingsLocation } from "../urls.js";
+import { renderSystemActionPage } from "../views/system.js";
 
 export async function handleSettingsActions(context: AppContext, systemActions: SystemActionService, req: IncomingMessage, res: ServerResponse, url: URL): Promise<boolean> {
   if (req.method === "POST" && url.pathname === "/admin/general/save") {
@@ -77,7 +78,7 @@ export async function handleSettingsActions(context: AppContext, systemActions: 
         redirect(res, settingsLocation("status", "error", "Power controls are available only on a Raspberry Pi."));
         return true;
       }
-      redirect(res, settingsLocation("status", "success", action === "restart" ? "Restart requested. The frame will be unavailable briefly." : "Shutdown requested. Wait for the display to go dark before removing power."));
+      sendHtml(res, 200, renderSystemActionPage(action));
     } catch (error) {
       redirect(res, settingsLocation("status", "error", error instanceof Error ? error.message : "Could not request the system action."));
     }
