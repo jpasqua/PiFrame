@@ -32,6 +32,8 @@ This path is for a developer setting up a Pi directly from GitHub. It is
 separate from the offline USB provisioning path described in
 [docs/PiImageBuild.md](docs/PiImageBuild.md).
 
+Note: If you've run this process before and already have an Imdage to begin with, you can use it and skip to step 6.
+
 1. Use Raspberry Pi Imager to write the full 64-bit Raspberry Pi OS desktop
    image. In its customisation settings, choose a hostname unique on the
    developer's network (for example `piframe-joe`), create the `piframe` user,
@@ -63,7 +65,13 @@ separate from the offline USB provisioning path described in
    nvm alias default 22
    node --version
    npm --version
+   ```
+   
+5. [Optional] Save an image of the SD Card at this state. See below for the **Raspberry Pi SD Card: Backup & Restore Guide**
 
+6. Install PiFrame
+
+   ```bash
    sudo git clone https://github.com/jpasqua/PiFrame.git /opt/piframe
    sudo chown -R piframe:piframe /opt/piframe
    cd /opt/piframe
@@ -146,6 +154,7 @@ separate from the offline USB provisioning path described in
    autologin does not trigger a desktop keyring dialog. If the desktop remains
    visible, inspect `piframe.service` and confirm that
    `~/.config/autostart/piframe-kiosk.desktop` belongs to `piframe`.
+
 
 ## Build, Run, and Test
 
@@ -279,3 +288,59 @@ The first five high-priority code-review findings have been addressed: streamed 
 * `/api/display/next` - slideshow photo selection API
 * `/media/thumbnail/:photoId.jpg`
 * `/media/display/:photoId.jpg`
+
+## Raspberry Pi SD Card: Backup & Restore Guide (Mac)
+
+This section documents the specific workflow for creating a compressed command-line backup of your Raspberry Pi SD card and restoring it using the graphical Raspberry Pi Imager. 
+
+---
+
+### Part 1: Creating a Compressed Backup (Terminal)
+
+This process clones your entire SD card into a single file and compresses it to save disk space on your Mac.
+
+#### Step 1: Identify the SD Card
+1. Plug your SD card into your Mac.
+2. Open the **Terminal** app.
+3. Run the following command to list all connected drives:
+   ```bash
+   diskutil list
+   ```
+4. Look through the output to find your SD card by matching its capacity (e.g., 16 GB or 32 GB).
+5. Note its identifier (e.g., `disk4` or `disk5`). 
+   * **CRITICAL:** Do not confuse it with `disk0` or `disk1`, which are your Mac's internal hard drives.
+
+#### Step 2: Unmount the Drive
+Before making a clone, you must release the drive from the macOS operating system. Replace `N` with your specific disk number:
+```bash
+diskutil unmountDisk /dev/diskN
+```
+
+#### Step 3: Clone the Card to an Image File
+Run the `dd` command to create an exact copy on your Desktop. 
+* *Note: Adding an `r` in front of the disk name (e.g., `rdiskN`) dramatically speeds up the copy process.*
+
+```bash
+sudo dd if=/dev/rdiskN of=~/Desktop/piframe_backup.img bs=1m
+```
+1. Type your Mac login password when prompted and press **Enter** (no characters will show on screen).
+2. The terminal will appear frozen. This is completely normal. The cloning process takes several minutes depending on the card speed.
+
+### Step 4: Maximize Space Savings (Compression)
+Because `dd` copies every single byte—including blank space—the resulting `.img` file will be massive. Run this command to compress it into a much smaller archive:
+```bash
+gzip -9 ~/Desktop/pi_backup.img
+```
+This leaves you with a compact `piframe_backup.img.gz` file on your Desktop and automatically cleans up the large, uncompressed original.
+
+---
+
+### Part 2: Restoring the Backup (Raspberry Pi Imager)
+
+When you need to restore your backup to a new or formatted SD card, use the official graphical tool.
+
+1. **Open** the **Raspberry Pi Imager** application on your Mac.
+2. Click **Choose OS**, scroll all the way to the bottom of the list, and select **Use custom**.
+3. **Select your backup file** (`piframe_backup.img.gz`) from your Desktop. *(There is no need to extract it first; the Imager handles compressed files directly).*
+4. Click **Choose Storage** and select your target SD card.
+5. Click **Write** and confirm the prompt to begin flashing the drive.
