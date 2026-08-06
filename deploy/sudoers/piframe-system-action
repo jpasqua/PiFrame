@@ -1,0 +1,2 @@
+# Permit the PiFrame service account to invoke only the root-owned action helper.
+piframe ALL=(root) NOPASSWD: /usr/local/sbin/piframe-system-action restart, /usr/local/sbin/piframe-system-action shutdown

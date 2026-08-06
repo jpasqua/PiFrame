@@ -109,6 +109,14 @@ separate from the offline USB provisioning path described in
      /opt/piframe/deploy/autostart/piframe-kiosk.desktop.example \
      "$HOME/.config/autostart/piframe-kiosk.desktop"
 
+   sudo install -D -o root -g root -m 0755 \
+     /opt/piframe/deploy/system/piframe-system-action \
+     /usr/local/sbin/piframe-system-action
+   sudo install -D -o root -g root -m 0440 \
+     /opt/piframe/deploy/sudoers/piframe-system-action \
+     /etc/sudoers.d/piframe-system-action
+   sudo visudo -cf /etc/sudoers.d/piframe-system-action
+
    sudo systemctl daemon-reload
    sudo systemctl enable --now piframe.service
    sleep 5

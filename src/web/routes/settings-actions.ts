@@ -7,12 +7,13 @@ import {
   type ScheduleSettings
 } from "../../core/settings.js";
 import type { AppContext } from "../../data/app-context.js";
+import { type SystemAction, SystemActionService } from "../../services/system-actions.js";
 import { readForm } from "../http/forms.js";
 import { isTrustedOrigin } from "../http/request.js";
 import { redirect, sendPlainText } from "../http/responses.js";
 import { settingsLocation } from "../urls.js";
 
-export async function handleSettingsActions(context: AppContext, req: IncomingMessage, res: ServerResponse, url: URL): Promise<boolean> {
+export async function handleSettingsActions(context: AppContext, systemActions: SystemActionService, req: IncomingMessage, res: ServerResponse, url: URL): Promise<boolean> {
   if (req.method === "POST" && url.pathname === "/admin/general/save") {
     if (!isTrustedOrigin(req)) { sendPlainText(res, 403, "Forbidden"); return true; }
     try {
@@ -66,6 +67,22 @@ export async function handleSettingsActions(context: AppContext, req: IncomingMe
     } catch (error) { redirect(res, settingsLocation("schedule", "error", error instanceof Error ? error.message : "Could not save schedule settings.")); }
     return true;
   }
+
+  if (req.method === "POST" && url.pathname === "/admin/system/action") {
+    if (!isTrustedOrigin(req)) { sendPlainText(res, 403, "Forbidden"); return true; }
+    try {
+      const form = await readForm(req);
+      const action = parseSystemAction(form.action);
+      if (!systemActions.request(action)) {
+        redirect(res, settingsLocation("status", "error", "Power controls are available only on a Raspberry Pi."));
+        return true;
+      }
+      redirect(res, settingsLocation("status", "success", action === "restart" ? "Restart requested. The frame will be unavailable briefly." : "Shutdown requested. Wait for the display to go dark before removing power."));
+    } catch (error) {
+      redirect(res, settingsLocation("status", "error", error instanceof Error ? error.message : "Could not request the system action."));
+    }
+    return true;
+  }
   return false;
 }
 
@@ -94,6 +111,11 @@ function parseLanguage(raw: string | undefined): FrameSettings["language"] {
 function parseOrientation(raw: string | undefined): FrameSettings["displayOrientation"] {
   if (raw === "0" || raw === "90" || raw === "180" || raw === "270") return Number(raw) as FrameSettings["displayOrientation"];
   throw new Error("Choose a valid display orientation.");
+}
+
+function parseSystemAction(raw: string | undefined): SystemAction {
+  if (raw === "restart" || raw === "shutdown") return raw;
+  throw new Error("Choose a valid system action.");
 }
 
 function parseSelectedFolders(form: Record<string, string>, folderIds: string[]): string[] {

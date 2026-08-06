@@ -3,7 +3,7 @@ export function folderPhotosPath(folderId: string): string {
 }
 
 export function settingsLocation(
-  section: "general" | "presentation" | "schedule" | "folders",
+  section: "general" | "presentation" | "schedule" | "folders" | "status",
   kind: "success" | "error",
   message: string
 ): string {
