@@ -38,9 +38,9 @@ File/database operations are not yet a fully transactional filesystem protocol. 
 
 ## Display and Time Model
 
-The kiosk display requests the next ready photo set from the local API. Selection applies the saved album scope, ordering mode, and one- or three-photo layout. When the schedule is off, the display stays black; HDMI standby belongs to the future Raspberry Pi adapter layer.
+The kiosk display requests the next ready photo set from the local API. Selection applies the saved album scope, ordering mode, and one- or three-photo layout. When the schedule is off, the display stays black; the Raspberry Pi display controller also puts the HDMI output into standby.
 
-Schedule evaluation uses the frame's saved IANA time zone rather than the host process time zone. The browser clock uses the same saved time zone and configured language. Physical orientation is passed to the display renderer; the current implementation adapts the three-photo layout for portrait orientations. Device-level screen rotation is intentionally deferred to Pi setup work.
+Schedule evaluation uses the frame's saved IANA time zone rather than the host process time zone. The browser clock uses the same saved time zone and configured language. Physical orientation is passed to the display renderer, which adapts the layout for portrait orientations. On a Raspberry Pi, the display controller also applies the saved orientation to the discovered HDMI output through `wlr-randr`.
 
 ## Location Provider Boundary
 

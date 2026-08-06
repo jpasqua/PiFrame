@@ -14,6 +14,8 @@ const RECONCILE_INTERVAL_MS = 5_000;
 export class DisplayPowerController {
   private appliedState: boolean | null = null;
   private lastFailedState: boolean | null = null;
+  private appliedOrientation: FrameSettings["displayOrientation"] | null = null;
+  private lastFailedOrientation: FrameSettings["displayOrientation"] | null = null;
   private resolvedConnector: string | null = null;
 
   constructor(
@@ -32,8 +34,12 @@ export class DisplayPowerController {
     const frame = this.settings.getJson<FrameSettings>("frame") ?? createDefaultFrameSettings();
     const schedule = this.settings.getJson<ScheduleSettings>("schedule") ?? createDefaultScheduleSettings();
     const shouldBeOn = isDisplayOn(schedule, new Date(), frame.timeZone);
-    if (shouldBeOn === this.appliedState) return;
+    if (shouldBeOn !== this.appliedState && !await this.setPower(shouldBeOn)) return;
+    if (!shouldBeOn || frame.displayOrientation === this.appliedOrientation) return;
+    await this.setOrientation(frame.displayOrientation);
+  }
 
+  private async setPower(shouldBeOn: boolean): Promise<boolean> {
     let lastError: unknown = new Error("No usable Wayland display found");
     const attemptedConnectors = new Set<string>();
     for (const waylandDisplay of this.waylandDisplays()) {
@@ -49,14 +55,14 @@ export class DisplayPowerController {
             connector,
             waylandDisplay
           });
-          return;
+          return true;
         } catch (error) {
           lastError = error;
         }
       }
     }
 
-    if (this.lastFailedState === shouldBeOn) return;
+    if (this.lastFailedState === shouldBeOn) return false;
     this.lastFailedState = shouldBeOn;
     this.events.record("error", "display.power_failed", "Could not change HDMI display power.", {
       requestedState: shouldBeOn ? "on" : "off",
@@ -64,6 +70,42 @@ export class DisplayPowerController {
       attemptedConnectors: [...attemptedConnectors],
       error: lastError instanceof Error ? lastError.message : "Unknown error"
     });
+    return false;
+  }
+
+  private async setOrientation(orientation: FrameSettings["displayOrientation"]): Promise<boolean> {
+    let lastError: unknown = new Error("No usable Wayland display found");
+    const attemptedConnectors = new Set<string>();
+    for (const waylandDisplay of this.waylandDisplays()) {
+      const connectors = await this.connectorsForDisplay(waylandDisplay);
+      for (const connector of connectors) {
+        attemptedConnectors.add(connector);
+        try {
+          await this.runWlrRandr(waylandDisplay, ["--output", connector, "--transform", orientation === 0 ? "normal" : orientation.toString()]);
+          this.resolvedConnector = connector;
+          this.appliedOrientation = orientation;
+          this.lastFailedOrientation = null;
+          this.events.record("info", "display.orientation_set", "Applied the HDMI display orientation.", {
+            connector,
+            waylandDisplay,
+            orientation
+          });
+          return true;
+        } catch (error) {
+          lastError = error;
+        }
+      }
+    }
+
+    if (this.lastFailedOrientation === orientation) return false;
+    this.lastFailedOrientation = orientation;
+    this.events.record("error", "display.orientation_failed", "Could not change HDMI display orientation.", {
+      requestedOrientation: orientation,
+      waylandDisplays: this.waylandDisplays(),
+      attemptedConnectors: [...attemptedConnectors],
+      error: lastError instanceof Error ? lastError.message : "Unknown error"
+    });
+    return false;
   }
 
   private async connectorsForDisplay(waylandDisplay: string): Promise<string[]> {
