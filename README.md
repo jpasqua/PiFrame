@@ -45,7 +45,7 @@ Note: If you've run this process before and already have an Imdage to begin with
    ```bash
    sudo apt update
    sudo apt full-upgrade -y
-   sudo apt install -y avahi-daemon build-essential curl git python3 wlr-randr
+   sudo apt install -y avahi-daemon build-essential curl git network-manager python3 wlr-randr
    ```
 
    Reboot after the OS upgrade, then log back in as `piframe`:
@@ -126,7 +126,15 @@ Note: If you've run this process before and already have an Imdage to begin with
      /etc/sudoers.d/piframe-system-action
    sudo visudo -cf /etc/sudoers.d/piframe-system-action
 
+   sudo install -D -o root -g root -m 0755 \
+     /opt/piframe/deploy/system/piframe-network-manager \
+     /usr/local/sbin/piframe-network-manager
+   sudo install -D -o root -g root -m 0644 \
+     /opt/piframe/deploy/systemd/piframe-network.service.example \
+     /etc/systemd/system/piframe-network.service
+
    sudo systemctl daemon-reload
+   sudo systemctl enable --now piframe-network.service
    sudo systemctl enable --now piframe.service
    sleep 5
    curl -fsS http://127.0.0.1/health
@@ -155,6 +163,24 @@ Note: If you've run this process before and already have an Imdage to begin with
    autologin does not trigger a desktop keyring dialog. If the desktop remains
    visible, inspect `piframe.service` and confirm that
    `~/.config/autostart/piframe-kiosk.desktop` belongs to `piframe`.
+
+### Wi-Fi recovery portal
+
+At each boot, `piframe-network.service` lets NetworkManager use any saved Wi-Fi
+connection. If none is available, it immediately starts an open temporary
+network; if saved networks exist but cannot connect, it tries them for 60
+seconds before doing the same. The HDMI display then gives the temporary SSID
+and its setup address. Join that network and open the displayed address (usually
+`http://10.42.0.1`) to enter the home Wi-Fi name and password. PiFrame saves
+the successful connection through NetworkManager, removes the temporary network,
+and returns to the slideshow automatically.
+
+The network is intentionally open to make initial setup less confusing. Use it
+only briefly and do not enter Wi-Fi credentials while untrusted people are
+nearby. The portal is available only while Wi-Fi setup or recovery is active.
+This developer-flow implementation does not yet firewall AP clients away from
+the normal PiFrame listener, so it must remain on a trusted test device until
+the offline provisioning flow adds that isolation.
 
 ### Update an installed PiFrame
 

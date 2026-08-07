@@ -26,6 +26,8 @@ export function renderDisplayPage(settings: DisplaySettings, frame: FrameSetting
       .stage.landscape-pair { grid-template-rows:repeat(2,minmax(0,1fr)); gap:4px; }
       .stage.landscape-side-pair { grid-template-columns:repeat(2,minmax(0,1fr)); gap:4px; }
       .stage.portrait-triptych { grid-template-columns:repeat(3,minmax(0,1fr)); gap:4px; }
+      .stage.portrait-landscape-trio { grid-template-columns:.37fr .63fr; grid-template-rows:repeat(2,minmax(0,1fr)); gap:4px; }
+      .stage.portrait-landscape-trio .photo-panel:first-child { grid-row:1 / -1; }
       .stage.landscape-trio { grid-template-columns:repeat(2,minmax(0,1fr)); grid-template-rows:.78fr 1.22fr; gap:4px; }
       .stage.landscape-trio .photo-panel:first-child { grid-column:1 / -1; }
       .stage.portrait-trio { grid-template-columns:repeat(2,minmax(0,1fr)); grid-template-rows:1.18fr .82fr; gap:4px; }

@@ -1,0 +1,13 @@
+[Unit]
+Description=PiFrame Wi-Fi connection and recovery portal
+After=NetworkManager.service
+Wants=NetworkManager.service
+Before=piframe.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/piframe-network-manager startup
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

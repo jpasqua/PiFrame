@@ -1,7 +1,7 @@
 [Unit]
 Description=PiFrame local picture frame service
-After=network-online.target
-Wants=network-online.target
+After=NetworkManager.service piframe-network.service
+Wants=NetworkManager.service
 
 [Service]
 Type=simple

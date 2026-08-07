@@ -1,0 +1,8 @@
+.clock-settings { display:grid; gap:10px; max-width:370px; }
+.clock-enabled { justify-self:start; }
+.clock-options { display:grid; gap:10px; padding:13px; border:1px solid var(--line); border-radius:8px; }
+.clock-options[hidden] { display:none; }
+.clock-row { display:grid; grid-template-columns:100px minmax(0,1fr); align-items:center; gap:10px; font-weight:700; }
+.clock-row select { width:100%; min-width:0; padding:8px 10px; border:1px solid #cdd0d4; border-radius:6px; background:#fff; font:inherit; }
+.clock-toggles { display:flex; flex-wrap:wrap; gap:12px; }
+.clock-toggles label { font-weight:400; }
