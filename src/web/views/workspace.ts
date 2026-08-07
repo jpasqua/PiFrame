@@ -10,17 +10,17 @@ import { renderNotFoundPage } from "./system.js";
 
 function renderGeneralSettingsPanel(settings: FrameSettings): string {
   const timeZones = Intl.supportedValuesOf("timeZone").map((timeZone) => `<option value="${escapeHtml(timeZone)}"></option>`).join("");
-  const orientationOptions: Array<[FrameSettings["displayOrientation"], string]> = [
-    [0, "0 degrees (normal)"],
-    [90, "90 degrees (clockwise)"],
-    [180, "180 degrees"],
-    [270, "270 degrees (counter-clockwise)"]
+  const orientationOptions: Array<{ value: FrameSettings["displayOrientation"]; label: string; arrow: string; shape: "landscape" | "portrait" }> = [
+    { value: 0, label: "0 degrees (normal)", arrow: "↑", shape: "landscape" },
+    { value: 90, label: "90 degrees (clockwise)", arrow: "→", shape: "portrait" },
+    { value: 180, label: "180 degrees", arrow: "↓", shape: "landscape" },
+    { value: 270, label: "270 degrees (counter-clockwise)", arrow: "←", shape: "portrait" }
   ];
 
   return `<div class="card"><form method="post" action="/admin/general/save">
     <section class="section"><h3>Frame identity</h3><p class="muted">The frame name is reserved for the Pi hostname when device setup is added. Saving it does not change this computer's hostname.</p><label class="field">Frame name<input type="text" name="frameName" value="${escapeHtml(settings.frameName)}" maxlength="63" pattern="[a-z0-9]+" autocapitalize="none" spellcheck="false" required><small>One lowercase word using letters and numbers.</small></label><label class="field">Frame description<input type="text" name="frameDescription" value="${escapeHtml(settings.frameDescription)}" maxlength="80" placeholder="Living Room"><small>A one-line description, up to 80 characters.</small></label><p class="frame-id">Frame ID <code>${escapeHtml(settings.frameId)}</code></p></section>
     <section class="section"><h3>Location and time</h3><div class="location-field"><div class="location-label">Location <span class="location-info-wrap"><button class="location-info" type="button" aria-label="About location search" aria-describedby="location-search-info">i</button><span id="location-search-info" class="location-tooltip" role="tooltip">Search to choose a matching place. Location lookups via Open-Meteo are requested only when you choose to search.</span></span></div><div class="location-input-row"><input id="frame-location" type="text" name="location" value="${escapeHtml(settings.location)}" maxlength="80" placeholder="City, state, country or postal code"><button id="search-location" class="secondary-action" type="button">Search location</button></div></div><p id="location-lookup-status" class="muted location-status" aria-live="polite"></p><div id="location-search-results" class="location-results" hidden></div><details class="advanced-location"><summary>Advanced location settings</summary><div class="advanced-location-fields"><label class="field">Time zone<input id="frame-time-zone" type="text" name="timeZone" value="${escapeHtml(settings.timeZone)}" list="time-zone-options" required><small>Used for scheduling and the clock.</small></label><datalist id="time-zone-options">${timeZones}</datalist><label class="field">Language<select name="language"><option value="en-US"${settings.language === "en-US" ? " selected" : ""}>English (United States)</option></select><small>More interface languages will be available when PiFrame is translated.</small></label></div></details></section>
-    <section class="section"><h3>Physical display</h3><label class="field">Display orientation<select name="displayOrientation">${orientationOptions.map(([value, label]) => `<option value="${value.toString()}"${settings.displayOrientation === value ? " selected" : ""}>${label}</option>`).join("")}</select></label></section>
+    <section class="section"><h3>Physical display</h3><fieldset class="orientation-choices"><legend>Display orientation</legend><div class="orientation-options">${orientationOptions.map(({ value, label, arrow, shape }) => `<label class="orientation-choice" title="${label}"><input type="radio" name="displayOrientation" value="${value.toString()}"${settings.displayOrientation === value ? " checked" : ""}><span class="orientation-screen ${shape}" aria-hidden="true">${arrow}</span><span class="sr-only">${label}</span></label>`).join("")}</div></fieldset></section>
     <button class="save" type="submit">Save general settings</button>
   </form><script src="/assets/app/general-location.js" defer></script></div>`;
 }

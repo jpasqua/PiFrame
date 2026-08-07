@@ -156,6 +156,18 @@ Note: If you've run this process before and already have an Imdage to begin with
    visible, inspect `piframe.service` and confirm that
    `~/.config/autostart/piframe-kiosk.desktop` belongs to `piframe`.
 
+### Update an installed PiFrame
+
+After changes have been pushed to GitHub, run the included helper on the Pi:
+
+```bash
+/opt/piframe/update-piframe.sh
+```
+
+It shows the working-tree status, fast-forwards from GitHub, installs the
+locked dependencies, builds PiFrame, and restarts the service. It may prompt
+for the `piframe` user's sudo password when restarting the service.
+
 
 ## Build, Run, and Test
 
