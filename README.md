@@ -32,7 +32,7 @@ This path is for a developer setting up a Pi directly from GitHub. It is
 separate from the offline USB provisioning path described in
 [docs/PiImageBuild.md](docs/PiImageBuild.md).
 
-Note: If you've run this process before and already have an Imdage to begin with, you can use it and skip to step 6.
+Note: If you've run this process before and already have an Imdage to begin with, you can use it and skip to step 5.
 
 1. Use Raspberry Pi Imager to write the full 64-bit Raspberry Pi OS desktop
    image. In its customisation settings, choose a hostname unique on the
@@ -54,7 +54,9 @@ Note: If you've run this process before and already have an Imdage to begin with
    sudo reboot now
    ```
 
-4. Install Node 22, then clone, build, and verify PiFrame. Run these commands
+4. [Optional] Save an image of the SD Card at this state. See below for the **Raspberry Pi SD Card: Backup & Restore Guide**
+
+5. Install Node 22, then clone, build, and verify PiFrame. Run these commands
    as `piframe`, without `sudo`:
 
    ```bash
@@ -67,7 +69,6 @@ Note: If you've run this process before and already have an Imdage to begin with
    npm --version
    ```
    
-5. [Optional] Save an image of the SD Card at this state. See below for the **Raspberry Pi SD Card: Backup & Restore Guide**
 
 6. Install PiFrame
 
