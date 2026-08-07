@@ -11,6 +11,6 @@ export function renderWifiPortalPage(state: WifiPortalState, error = ""): string
 
 export function renderWifiDisplayPage(state: WifiPortalState): string {
   const ssid = state.ssid || "PiFrame Setup";
-  const address = state.address || "http://10.42.0.1";
+  const address = `${state.address || "http://10.42.0.1"}/setup`;
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta http-equiv="refresh" content="5"><title>PiFrame Wi-Fi Setup</title><style>html,body{width:100%;height:100%;margin:0;background:#16191f;color:#fff;font-family:system-ui,sans-serif}main{height:100%;display:grid;place-content:center;text-align:center;padding:40px}h1{font-size:clamp(2rem,5vw,4rem);margin:0 0 18px}p{font-size:clamp(1.1rem,2.5vw,1.7rem);line-height:1.5;margin:6px}.address{font-weight:700;color:#c8e2ff}</style></head><body><main><h1>Connect PiFrame to Wi-Fi</h1><p>Join the temporary network:</p><p class="address">${escapeHtml(ssid)}</p><p>Then open:</p><p class="address">${escapeHtml(address)}</p><p>${escapeHtml(state.message || "PiFrame will continue automatically after it connects.")}</p></main></body></html>`;
 }

@@ -48,6 +48,7 @@ portal_address() {
 }
 
 start_portal() {
+  portal_message="${1-Connect to the temporary PiFrame network, then use the setup address to enter your home Wi-Fi details.}"
   device="$(wifi_device)"
   if [ -z "$device" ]; then
     write_state setup "" "" "No Wi-Fi adapter was found. Connect a supported Wi-Fi adapter and restart PiFrame."
@@ -70,7 +71,7 @@ start_portal() {
   /usr/bin/nmcli connection down id "$AP_CONNECTION" >/dev/null 2>&1 || true
   /usr/bin/nmcli connection up id "$AP_CONNECTION" >/dev/null
   address="$(portal_address "$device")"
-  write_state setup "$ssid" "${address:-10.42.0.1}" "Connect to the temporary PiFrame network, then use the setup address to enter your home Wi-Fi details."
+  write_state setup "$ssid" "${address:-10.42.0.1}" "$portal_message"
 }
 
 connect() {
@@ -87,18 +88,23 @@ connect() {
   fi
   write_state connecting "" "" "Connecting to Wi-Fi…"
   /usr/bin/nmcli connection down id "$AP_CONNECTION" >/dev/null 2>&1 || true
+  # The adapter has just left AP mode. Ask NetworkManager to refresh its scan
+  # before looking for the selected home SSID.
+  /usr/bin/nmcli device wifi rescan ifname "$device" >/dev/null 2>&1 || true
+  sleep 3
   connection="piframe-wifi-$(printf '%s' "$ssid" | /usr/bin/cksum | /usr/bin/awk '{ print $1 }')"
   /usr/bin/nmcli connection delete id "$connection" >/dev/null 2>&1 || true
   if [ -n "$password" ]; then
     connected=0
-    /usr/bin/nmcli device wifi connect "$ssid" password "$password" ifname "$device" name "$connection" >/dev/null || connected=1
+    connect_error="$(/usr/bin/nmcli device wifi connect "$ssid" password "$password" ifname "$device" name "$connection" 2>&1)" || connected=1
   else
     connected=0
-    /usr/bin/nmcli device wifi connect "$ssid" ifname "$device" name "$connection" >/dev/null || connected=1
+    connect_error="$(/usr/bin/nmcli device wifi connect "$ssid" ifname "$device" name "$connection" 2>&1)" || connected=1
   fi
   if [ "$connected" -ne 0 ]; then
-    start_portal || true
-    echo "Could not connect to that Wi-Fi network." >&2
+    logger -t piframe-network -- "Wi-Fi connection attempt failed for selected network: $connect_error" || true
+    start_portal "Could not connect to that network. Check its name and password, then try again." || true
+    echo "$connect_error" >&2
     exit 1
   fi
   if wifi_connected; then
