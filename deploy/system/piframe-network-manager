@@ -58,9 +58,13 @@ start_portal() {
   ssid="PiFrame Setup-$suffix"
   /usr/bin/nmcli connection down id "$AP_CONNECTION" >/dev/null 2>&1 || true
   /usr/bin/nmcli connection delete id "$AP_CONNECTION" >/dev/null 2>&1 || true
-  /usr/bin/nmcli device wifi hotspot ifname "$device" con-name "$AP_CONNECTION" ssid "$ssid" >/dev/null
+  # Create a new connection rather than altering nmcli's generated hotspot
+  # profile. Generated profiles can retain a WEP/WPA secret and then fail when
+  # activated as an intentionally open network.
+  /usr/bin/nmcli connection add type wifi ifname "$device" con-name "$AP_CONNECTION" \
+    autoconnect no ssid "$ssid" >/dev/null
   /usr/bin/nmcli connection modify "$AP_CONNECTION" \
-    802-11-wireless-security.key-mgmt none \
+    802-11-wireless.mode ap \
     ipv4.method shared \
     ipv6.method disabled >/dev/null
   /usr/bin/nmcli connection down id "$AP_CONNECTION" >/dev/null 2>&1 || true
