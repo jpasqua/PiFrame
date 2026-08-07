@@ -1,0 +1,3 @@
+[Unit]
+After=piframe-wifi-connect.service
+Requires=piframe-wifi-connect.service

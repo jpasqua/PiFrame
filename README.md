@@ -85,7 +85,20 @@ Note: If you've run this process before and already have an Imdage to begin with
    update instructions are maintained by the [official nvm
    project](https://github.com/nvm-sh/nvm#installing-and-updating).
 
-5. Install the service and kiosk autostart files. First obtain the absolute
+7. Prepare the Wi-Fi Connect files on the host computer and copy the resulting
+   `piframe-provision` directory to a USB flash drive. This download happens on
+   the host, never on the Pi, and verifies the pinned official release assets:
+
+   ```bash
+   cd /path/to/PiFrame
+   node scripts/prepare-wifi-connect-bundle.mjs /path/to/usb-root
+   ```
+
+   This developer path targets the 64-bit Raspberry Pi OS image. The script
+   places the binary and portal UI under
+   `piframe-provision/wifi-connect/` on the USB drive.
+
+8. Install the service and kiosk autostart files. First obtain the absolute
    Node path and the `piframe` UID:
 
    ```bash
@@ -126,15 +139,30 @@ Note: If you've run this process before and already have an Imdage to begin with
      /etc/sudoers.d/piframe-system-action
    sudo visudo -cf /etc/sudoers.d/piframe-system-action
 
+   # Adjust this to the USB drive's actual mount point.
+   PIFRAME_USB=/media/piframe/<USB_LABEL>
+   PIFRAME_WIFI_BUNDLE="$PIFRAME_USB/piframe-provision/wifi-connect"
+   PIFRAME_WIFI_TEMP="$(mktemp -d)"
+   tar -xzf "$PIFRAME_WIFI_BUNDLE/wifi-connect-aarch64-unknown-linux-gnu.tar.gz" \
+     -C "$PIFRAME_WIFI_TEMP"
    sudo install -D -o root -g root -m 0755 \
-     /opt/piframe/deploy/system/piframe-network-manager \
-     /usr/local/sbin/piframe-network-manager
+     "$PIFRAME_WIFI_TEMP/wifi-connect" /usr/local/sbin/wifi-connect
+   sudo install -d -o root -g root -m 0755 /usr/local/share/wifi-connect/ui
+   sudo tar -xzf "$PIFRAME_WIFI_BUNDLE/wifi-connect-ui.tar.gz" \
+     -C /usr/local/share/wifi-connect/ui
+   rm -rf "$PIFRAME_WIFI_TEMP"
+
+   sudo install -D -o root -g root -m 0755 \
+     /opt/piframe/deploy/system/piframe-wifi-connect \
+     /usr/local/sbin/piframe-wifi-connect
    sudo install -D -o root -g root -m 0644 \
-     /opt/piframe/deploy/systemd/piframe-network.service.example \
-     /etc/systemd/system/piframe-network.service
+     /opt/piframe/deploy/systemd/piframe-wifi-connect.service.example \
+     /etc/systemd/system/piframe-wifi-connect.service
 
    sudo systemctl daemon-reload
-   sudo systemctl enable --now piframe-network.service
+   sudo install -d -m 0755 /var/lib/piframe
+   sudo touch /var/lib/piframe/wifi-provisioned
+   sudo systemctl enable --now piframe-wifi-connect.service
    sudo systemctl enable --now piframe.service
    sleep 5
    curl -fsS http://127.0.0.1/health
@@ -164,23 +192,56 @@ Note: If you've run this process before and already have an Imdage to begin with
    visible, inspect `piframe.service` and confirm that
    `~/.config/autostart/piframe-kiosk.desktop` belongs to `piframe`.
 
-### Wi-Fi recovery portal
+### Wi-Fi setup and recovery
 
-At each boot, `piframe-network.service` lets NetworkManager use any saved Wi-Fi
-connection. If none is available, it immediately starts an open temporary
-network; if saved networks exist but cannot connect, it tries them for 60
-seconds before doing the same. The HDMI display then gives the temporary SSID
-and its setup address. Join that network and open the displayed address (usually
-`http://10.42.0.1`) to enter the home Wi-Fi name and password. PiFrame saves
-the successful connection through NetworkManager, removes the temporary network,
-and returns to the slideshow automatically.
+PiFrame delegates Wi-Fi setup to [balena WiFi Connect](https://github.com/balena-os/wifi-connect).
+It uses NetworkManager, creates an open temporary access point, presents a
+mobile captive portal automatically, scans and lists nearby networks, and saves
+the selected credentials after a successful connection.
 
-The network is intentionally open to make initial setup less confusing. Use it
-only briefly and do not enter Wi-Fi credentials while untrusted people are
-nearby. The portal is available only while Wi-Fi setup or recovery is active.
-This developer-flow implementation does not yet firewall AP clients away from
-the normal PiFrame listener, so it must remain on a trusted test device until
-the offline provisioning flow adds that isolation.
+`piframe-wifi-connect.service` owns only the appliance policy: a fresh frame
+starts WiFi Connect immediately; a previously provisioned frame gives saved
+connections 60 seconds to reconnect before WiFi Connect starts. The
+`/var/lib/piframe/wifi-provisioned` marker distinguishes those cases. The
+developer installation above creates the marker because Wi-Fi was already
+configured in Raspberry Pi Imager. The offline provisioning bundle supplies a
+pinned WiFi Connect binary and UI so the Pi never needs Internet access to
+enter setup mode.
+
+### Migrating from the experimental portal
+
+The original experimental `piframe-network.service` is incompatible with WiFi
+Connect and must be removed when updating an existing frame. First ensure the
+frame is connected to its normal network, then install the WiFi Connect bundle
+and run the following once:
+
+```bash
+cd /opt/piframe
+git pull --ff-only
+npm ci
+npm run build
+
+sudo systemctl disable --now piframe-network.service || true
+sudo rm -f /etc/systemd/system/piframe-network.service /usr/local/sbin/piframe-network-manager
+sudo rm -f /etc/systemd/system/piframe.service.d/network.conf
+sudo install -D -o root -g root -m 0644 \
+  /opt/piframe/deploy/systemd/piframe-wifi-connect-dependency.conf.example \
+  /etc/systemd/system/piframe.service.d/wifi-connect.conf
+
+# Repeat the WiFi Connect binary/UI and service installation commands from step 8.
+sudo systemctl daemon-reload
+sudo touch /var/lib/piframe/wifi-provisioned
+sudo systemctl enable piframe-wifi-connect.service
+sudo systemctl restart piframe.service
+```
+
+The marker preserves normal boot behavior on an already connected developer
+frame. To deliberately test recovery later, remove it and reboot:
+
+```bash
+sudo rm -f /var/lib/piframe/wifi-provisioned
+sudo reboot
+```
 
 ### Update an installed PiFrame
 

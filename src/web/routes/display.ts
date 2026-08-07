@@ -1,26 +1,18 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { createDefaultDisplaySettings, createDefaultFrameSettings, createDefaultScheduleSettings, type DisplaySettings, type FrameSettings, type ScheduleSettings } from "../../core/settings.js";
 import type { AppContext } from "../../data/app-context.js";
-import type { WifiPortalService } from "../../services/wifi-portal.js";
 import { isDisplayOn, RandomDisplayPlanner, selectDisplaySlide } from "../display-state.js";
 import { sendHtml, sendJson } from "../http/responses.js";
 import { renderDisplayPage } from "../views/display.js";
-import { renderWifiDisplayPage } from "../views/wifi-portal.js";
 
-export async function handleDisplayRoute(
+export function handleDisplayRoute(
   context: AppContext,
   randomPlanner: RandomDisplayPlanner,
-  wifiPortal: WifiPortalService,
   req: IncomingMessage,
   res: ServerResponse,
   url: URL
-): Promise<boolean> {
+): boolean {
   if (req.method === "GET" && url.pathname === "/display") {
-    const wifiState = await wifiPortal.state();
-    if (wifiState && wifiState.mode !== "online") {
-      sendHtml(res, 200, renderWifiDisplayPage(wifiState));
-      return true;
-    }
     const settings = context.settings.getJson<DisplaySettings>("display") ?? createDefaultDisplaySettings();
     const frame = context.settings.getJson<FrameSettings>("frame") ?? createDefaultFrameSettings();
     sendHtml(res, 200, renderDisplayPage(settings, frame, createPresentationVersion(settings, frame)));

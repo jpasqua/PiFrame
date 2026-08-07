@@ -1,0 +1,64 @@
+#!/bin/sh
+# PiFrame's policy wrapper around balena WiFi Connect. WiFi Connect owns the
+# access point, captive portal, scan list, and credential handling.
+set -eu
+
+MARKER=/var/lib/piframe/wifi-provisioned
+WAIT_SECONDS="${PIFRAME_WIFI_WAIT_SECONDS:-60}"
+WIFI_CONNECT_BIN="${PIFRAME_WIFI_CONNECT_BIN:-/usr/local/sbin/wifi-connect}"
+WIFI_CONNECT_UI_DIR="${PIFRAME_WIFI_CONNECT_UI_DIR:-/usr/local/share/wifi-connect/ui}"
+
+wifi_device() {
+  /usr/bin/nmcli -t -f DEVICE,TYPE device status | /usr/bin/awk -F: '$2 == "wifi" { print $1; exit }'
+}
+
+wifi_connected() {
+  /usr/bin/nmcli -t -f DEVICE,TYPE,STATE device status | /usr/bin/awk -F: '$2 == "wifi" && $3 == "connected" { found=1 } END { exit !found }'
+}
+
+has_saved_wifi() {
+  /usr/bin/nmcli -t -f TYPE connection show | /usr/bin/grep -qx wifi
+}
+
+run_portal() {
+  device="$(wifi_device)"
+  if [ -z "$device" ]; then
+    echo "PiFrame cannot start WiFi Connect: no Wi-Fi adapter was found." >&2
+    exit 69
+  fi
+  if [ ! -x "$WIFI_CONNECT_BIN" ]; then
+    echo "PiFrame cannot start WiFi Connect: $WIFI_CONNECT_BIN is missing or not executable." >&2
+    exit 69
+  fi
+  suffix="$(/bin/hostname | /usr/bin/cksum | /usr/bin/awk '{ printf "%04X", $1 % 65536 }')"
+  "$WIFI_CONNECT_BIN" \
+    --portal-interface "$device" \
+    --portal-ssid "PiFrame Setup-$suffix" \
+    --ui-directory "$WIFI_CONNECT_UI_DIR"
+  if ! wifi_connected; then
+    echo "WiFi Connect exited without joining a Wi-Fi network." >&2
+    exit 1
+  fi
+  /usr/bin/install -d -m 0755 /var/lib/piframe
+  /usr/bin/touch "$MARKER"
+}
+
+if [ ! -f "$MARKER" ]; then
+  run_portal
+  exit 0
+fi
+
+if wifi_connected; then
+  exit 0
+fi
+
+if has_saved_wifi; then
+  elapsed=0
+  while [ "$elapsed" -lt "$WAIT_SECONDS" ]; do
+    sleep 2
+    if wifi_connected; then exit 0; fi
+    elapsed=$((elapsed + 2))
+  done
+fi
+
+run_portal

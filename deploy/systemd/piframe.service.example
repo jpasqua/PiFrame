@@ -1,7 +1,8 @@
 [Unit]
 Description=PiFrame local picture frame service
-After=NetworkManager.service piframe-network.service
+After=NetworkManager.service piframe-wifi-connect.service
 Wants=NetworkManager.service
+Requires=piframe-wifi-connect.service
 
 [Service]
 Type=simple

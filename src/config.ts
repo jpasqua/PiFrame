@@ -7,7 +7,6 @@ export interface AppConfig {
   platform: "desktop" | "raspberry-pi";
   paths: AppPaths;
   displayPower: DisplayPowerConfig;
-  networkPortal: NetworkPortalConfig;
 }
 
 export interface DisplayPowerConfig {
@@ -15,11 +14,6 @@ export interface DisplayPowerConfig {
   connector: string;
   waylandDisplay: string;
   runtimeDir: string;
-}
-
-export interface NetworkPortalConfig {
-  stateFile: string;
-  command: string;
 }
 
 export interface AppPaths {
@@ -53,10 +47,6 @@ export function loadConfig(): AppConfig {
       connector: process.env.PIFRAME_DISPLAY_CONNECTOR ?? "",
       waylandDisplay: process.env.PIFRAME_WAYLAND_DISPLAY ?? "",
       runtimeDir: process.env.PIFRAME_WAYLAND_RUNTIME_DIR ?? process.env.XDG_RUNTIME_DIR ?? `/run/user/${currentUserId}`
-    },
-    networkPortal: {
-      stateFile: process.env.PIFRAME_NETWORK_STATE_FILE ?? "/run/piframe/network-state.json",
-      command: process.env.PIFRAME_NETWORK_PORTAL_COMMAND ?? "/usr/local/sbin/piframe-network-manager"
     }
   };
 }

@@ -66,11 +66,11 @@ Raspberry Pi OS uses NetworkManager as the authority for saved Wi-Fi
 connections. PiFrame should not write ad-hoc `wpa_supplicant` configuration
 files.
 
-PiFrame uses NetworkManager directly to create a temporary access point,
-collect a selected SSID and passphrase through its local setup page, save the
-connection, and retry if joining fails. The `piframe-network.service` owns when
-that component is started and stopped; it does not replace NetworkManager or
-write `wpa_supplicant` configuration files.
+PiFrame delegates captive setup to [balena WiFi Connect](https://github.com/balena-os/wifi-connect).
+It uses NetworkManager to create the temporary access point, presents a captive
+portal that scans and lists nearby networks, saves a selected connection, and
+returns to the AP if joining fails. PiFrame owns when WiFi Connect is launched;
+it does not replace NetworkManager or write `wpa_supplicant` configuration files.
 
 ### Initial setup flow
 
@@ -171,7 +171,7 @@ concerns in the Node.js server:
 | Service | Responsibility |
 | --- | --- |
 | `piframe-firstboot.service` | One-time machine and provisioning-state initialization. |
-| `piframe-network.service` | Tries saved Wi-Fi, starts the temporary AP when necessary, and supplies status to the setup screen. |
+| `piframe-wifi-connect.service` | Tries saved Wi-Fi, then launches WiFi Connect when setup or recovery is necessary. |
 | `piframe.service` | Starts the local Node.js application. |
 | `piframe-kiosk.service` | Starts Chromium in the Wayland session and displays either provisioning status or the frame. |
 | display-power adapter | Invokes the approved `wlr-randr` HDMI control for schedule changes. |
@@ -185,7 +185,7 @@ a blank display.
 
 1. Create the USB-bundle build script and offline installer.
 2. Add durable provisioning state and the HDMI status page.
-3. Install and validate the NetworkManager portal script, then implement initial setup mode.
+3. Bundle and validate a pinned WiFi Connect release, then implement initial setup mode.
 4. Implement normal-boot connection timeout and recovery AP mode.
 5. Add AP firewall isolation and exercise failure/retry cases.
 6. Decide and implement the authenticated/pairing path for browser access to

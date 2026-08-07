@@ -1,12 +1,12 @@
 [Unit]
-Description=PiFrame Wi-Fi connection and recovery portal
+Description=PiFrame Wi-Fi setup and recovery via balena WiFi Connect
 After=NetworkManager.service
 Wants=NetworkManager.service
 Before=piframe.service
 
 [Service]
 Type=oneshot
-ExecStart=/usr/local/sbin/piframe-network-manager startup
+ExecStart=/usr/local/sbin/piframe-wifi-connect
 RemainAfterExit=yes
 
 [Install]

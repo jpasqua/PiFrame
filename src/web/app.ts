@@ -3,7 +3,6 @@ import type { AppContext } from "../data/app-context.js";
 import { PhotoIngestionService } from "../services/photo-ingestion.js";
 import { LocationLookupService } from "../services/location-lookup.js";
 import { SystemActionService } from "../services/system-actions.js";
-import { WifiPortalService } from "../services/wifi-portal.js";
 import { redirect, sendHtml } from "./http/responses.js";
 import { handleDisplayRoute } from "./routes/display.js";
 import { RandomDisplayPlanner } from "./display-state.js";
@@ -12,7 +11,6 @@ import { handleLocationRoute } from "./routes/location.js";
 import { handleSettingsActions } from "./routes/settings-actions.js";
 import { handleSystemRoute } from "./routes/system.js";
 import { handleWorkspaceGetRoute } from "./routes/workspace.js";
-import { handleWifiPortalRoute } from "./routes/wifi-portal.js";
 import { renderNotFoundPage as renderNotFoundView } from "./views/system.js";
 
 interface App {
@@ -24,7 +22,6 @@ export function createApp(context: AppContext): App {
   const locationLookup = new LocationLookupService();
   const randomDisplayPlanner = new RandomDisplayPlanner();
   const systemActions = new SystemActionService(context.config, context.events);
-  const wifiPortal = new WifiPortalService(context.config, context.events);
 
   return {
     async handle(req, res) {
@@ -33,9 +30,7 @@ export function createApp(context: AppContext): App {
 
       if (await handleSystemRoute(context, req, res, url)) return;
 
-      if (await handleWifiPortalRoute(wifiPortal, req, res, url)) return;
-
-      if (await handleDisplayRoute(context, randomDisplayPlanner, wifiPortal, req, res, url)) return;
+      if (handleDisplayRoute(context, randomDisplayPlanner, req, res, url)) return;
       if (handleWorkspaceGetRoute(context, req, res, url)) return;
 
       if (await handleLocationRoute(locationLookup, req, res, url)) return;
