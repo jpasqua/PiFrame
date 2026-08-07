@@ -5,8 +5,13 @@ set -eu
 
 MARKER=/var/lib/piframe/wifi-provisioned
 WAIT_SECONDS="${PIFRAME_WIFI_WAIT_SECONDS:-60}"
+PROFILE_DISCOVERY_SECONDS="${PIFRAME_WIFI_PROFILE_DISCOVERY_SECONDS:-10}"
 WIFI_CONNECT_BIN="${PIFRAME_WIFI_CONNECT_BIN:-/usr/local/sbin/wifi-connect}"
 WIFI_CONNECT_UI_DIR="${PIFRAME_WIFI_CONNECT_UI_DIR:-/usr/local/share/wifi-connect/ui}"
+
+log() {
+  echo "piframe-wifi-connect: $*"
+}
 
 wifi_device() {
   /usr/bin/nmcli -t -f DEVICE,TYPE device status | /usr/bin/awk -F: '$2 == "wifi" { print $1; exit }'
@@ -17,7 +22,19 @@ wifi_connected() {
 }
 
 has_saved_wifi() {
-  /usr/bin/nmcli -t -f TYPE connection show | /usr/bin/grep -qx wifi
+  /usr/bin/nmcli -g TYPE connection show 2>/dev/null | /usr/bin/grep -qx wifi
+}
+
+wait_for_saved_wifi() {
+  elapsed=0
+  while [ "$elapsed" -lt "$PROFILE_DISCOVERY_SECONDS" ]; do
+    if has_saved_wifi; then
+      return 0
+    fi
+    sleep 2
+    elapsed=$((elapsed + 2))
+  done
+  return 1
 }
 
 run_portal() {
@@ -44,21 +61,29 @@ run_portal() {
 }
 
 if [ ! -f "$MARKER" ]; then
+  log "Initial Wi-Fi setup is required."
   run_portal
   exit 0
 fi
 
 if wifi_connected; then
+  log "A Wi-Fi connection is already active."
   exit 0
 fi
 
-if has_saved_wifi; then
+log "Waiting up to $PROFILE_DISCOVERY_SECONDS seconds for NetworkManager to load saved Wi-Fi profiles."
+if wait_for_saved_wifi; then
+  log "Saved Wi-Fi profile found; allowing up to $WAIT_SECONDS seconds to connect."
   elapsed=0
   while [ "$elapsed" -lt "$WAIT_SECONDS" ]; do
-    sleep 2
     if wifi_connected; then exit 0; fi
+    sleep 2
     elapsed=$((elapsed + 2))
   done
+  log "Saved Wi-Fi did not connect within $WAIT_SECONDS seconds."
+else
+  log "No saved Wi-Fi profile was found."
 fi
 
+log "Launching WiFi Connect recovery portal."
 run_portal
