@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>PiFrame is connecting</title>
+    <style>
+      :root { color-scheme: dark; }
+      * { box-sizing: border-box; }
+      body {
+        align-items: center;
+        background: #10130f;
+        color: #f7f2e8;
+        cursor: none;
+        display: flex;
+        font-family: Georgia, "Times New Roman", serif;
+        justify-content: center;
+        margin: 0;
+        min-height: 100vh;
+      }
+      main { max-width: 850px; padding: 7vw; text-align: center; }
+      .mark { color: #c8da8d; font-size: clamp(1rem, 2vw, 1.35rem); letter-spacing: .18em; text-transform: uppercase; }
+      h1 { font-size: clamp(2.2rem, 6vw, 5rem); font-weight: 400; line-height: 1.06; margin: .7em 0 .35em; }
+      p { color: #d6d2c9; font-size: clamp(1.05rem, 2.2vw, 1.55rem); line-height: 1.55; margin: 0 auto 1em; max-width: 680px; }
+      .network { color: #fff; font-weight: 700; white-space: nowrap; }
+      .note { color: #aeb4a1; font-size: clamp(.9rem, 1.7vw, 1.15rem); margin-top: 2.2em; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <div class="mark">PiFrame</div>
+      <h1>Getting connected</h1>
+      <p>PiFrame is trying its saved Wi-Fi network.</p>
+      <p>If it cannot connect, use a phone or tablet to join the open network named <span class="network">PiFrame Setup-XXXX</span>. Follow your device’s Wi-Fi sign-in prompt to choose your home network and enter its password.</p>
+      <p class="note">This screen will change to your photo frame automatically once PiFrame is online.</p>
+    </main>
+  </body>
+</html>

@@ -1,0 +1,34 @@
+#!/bin/sh
+# Start with an offline-safe setup screen, then replace it with PiFrame only
+# after the local server is answering. This prevents Chromium's error page from
+# becoming the HDMI experience while Wi-Fi Connect is doing its work.
+set -eu
+
+CHROMIUM_BIN="${PIFRAME_CHROMIUM_BIN:-chromium}"
+STATUS_PAGE="${PIFRAME_KIOSK_STATUS_PAGE:-/usr/local/share/piframe/kiosk-connecting.html}"
+DISPLAY_URL="${PIFRAME_KIOSK_DISPLAY_URL:-http://127.0.0.1/display}"
+HEALTH_URL="${PIFRAME_KIOSK_HEALTH_URL:-http://127.0.0.1/health}"
+PROFILE_DIR="${PIFRAME_KIOSK_PROFILE_DIR:-/home/piframe/.local/share/piframe-kiosk}"
+
+"$CHROMIUM_BIN" \
+  --kiosk \
+  --noerrdialogs \
+  --disable-session-crashed-bubble \
+  --password-store=basic \
+  "--user-data-dir=$PROFILE_DIR" \
+  "--app=file://$STATUS_PAGE" &
+status_browser_pid=$!
+
+while ! /usr/bin/curl --fail --silent --show-error --max-time 2 "$HEALTH_URL" >/dev/null 2>&1; do
+  sleep 2
+done
+
+kill "$status_browser_pid" 2>/dev/null || true
+wait "$status_browser_pid" 2>/dev/null || true
+exec "$CHROMIUM_BIN" \
+  --kiosk \
+  --noerrdialogs \
+  --disable-session-crashed-bubble \
+  --password-store=basic \
+  "--user-data-dir=$PROFILE_DIR" \
+  "--app=$DISPLAY_URL"

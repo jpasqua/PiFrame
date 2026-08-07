@@ -123,22 +123,15 @@ administration UI on the temporary network.
 
 ## HDMI user experience
 
-The user should never have to infer the device state from logs or LEDs. Before
-the slideshow is available, Chromium displays a local provisioning/status page
-with these states:
+The user should never have to infer device state from logs or LEDs. The kiosk
+must start with a local, offline-safe status page rather than attempting the
+PiFrame HTTP URL immediately. It explains that PiFrame is trying saved Wi-Fi
+and, if necessary, the user should join the open `PiFrame Setup-XXXX` network
+and follow the captive-portal prompt. Once `piframe.service` responds to its
+health endpoint, the launcher replaces that screen with the slideshow.
 
-* **Preparing PiFrame** — initializing local setup services.
-* **Starting Wi-Fi setup** — access point is being prepared.
-* **Connect your phone** — show `PiFrame Setup-ABCD`, setup URL, and QR code.
-* **Connecting to Wi-Fi** — identify the selected network without displaying
-  its password.
-* **Ready** — show the device's local address and the next action.
-* **Could not connect** — say that the setup AP remains available and invite
-  the user to try again.
-
-Captive-portal auto-opening is helpful but inconsistent across phones. The
-screen must always provide an explicit local URL, such as `http://192.168.4.1`,
-in addition to a QR code.
+WiFi Connect supplies the phone-facing captive portal; no PiFrame setup URL or
+manual IP address is required.
 
 ## Reaching settings after setup
 

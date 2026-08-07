@@ -127,6 +127,13 @@ Note: If you've run this process before and already have an Imdage to begin with
      "/^Environment=PIFRAME_PLATFORM=/a Environment=PIFRAME_WAYLAND_RUNTIME_DIR=/run/user/${PIFRAME_UID}" \
      /etc/systemd/system/piframe.service
 
+   sudo install -D -o root -g root -m 0755 \
+     /opt/piframe/deploy/system/piframe-kiosk \
+     /usr/local/sbin/piframe-kiosk
+   sudo install -D -o root -g root -m 0644 \
+     /opt/piframe/deploy/kiosk/kiosk-connecting.html \
+     /usr/local/share/piframe/kiosk-connecting.html
+
    install -D -m 0644 \
      /opt/piframe/deploy/autostart/piframe-kiosk.desktop.example \
      "$HOME/.config/autostart/piframe-kiosk.desktop"
@@ -185,11 +192,12 @@ Note: If you've run this process before and already have an Imdage to begin with
 
    With Raspberry Pi OS configured for graphical autologin as `piframe`, the
    HDMI screen should automatically leave the desktop and show Chromium
-   full-screen at PiFrame's `/display` view. It may take several seconds after
-   login for the service and browser to start. The kiosk launcher uses a
-   dedicated Chromium profile and Chromium's basic password store so graphical
-   autologin does not trigger a desktop keyring dialog. If the desktop remains
-   visible, inspect `piframe.service` and confirm that
+   full-screen. While PiFrame is starting or Wi-Fi setup is needed, it first
+   shows a local instruction screen; it automatically switches to `/display`
+   once the service is healthy. The kiosk launcher uses a dedicated Chromium
+   profile and Chromium's basic password store so graphical autologin does not
+   trigger a desktop keyring dialog. If the desktop remains visible, inspect
+   `piframe.service` and confirm that
    `~/.config/autostart/piframe-kiosk.desktop` belongs to `piframe`.
 
 ### Wi-Fi setup and recovery
