@@ -35,7 +35,6 @@ export function renderDisplayPage(settings: DisplaySettings, frame: FrameSetting
       .photo-panel { position:relative; min-width:0; min-height:0; margin:0; overflow:hidden; background:#000; }
       .photo-panel::before { content:""; position:absolute; inset:-7%; background:var(--photo-background) center / cover no-repeat; filter:blur(28px); transform:scale(1.08); opacity:.72; }
       img { position:relative; z-index:1; display:block; width:100%; height:100%; min-width:0; object-fit:${presentation}; background:transparent; }
-      .stage:not(.single) img { object-fit:contain; }
       #empty { position:relative; z-index:1; max-width:32rem; padding:2rem; text-align:center; color:#bdb6aa; line-height:1.6; }
       #clock { position:absolute; z-index:10; left:22px; top:18px; margin:0; color:rgba(255,255,255,.92); font-size:${clockSize}; font-variant-numeric:tabular-nums; letter-spacing:.03em; text-shadow:0 2px 5px #000; }
       @media (prefers-reduced-motion:reduce) { .stage { transition:none !important; } }
