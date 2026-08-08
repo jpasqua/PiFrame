@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>PiFrame User Manual</title>
+    <link rel="stylesheet" href="/assets/app/help/manual.css">
+  </head>
+  <body>
+    <div class="shell">
+      <main class="help-content">
+        <section id="overview">
+          <h2>Overview</h2>
+          <p class="lead">PiFrame is a local digital picture frame. The screen shows the slideshow; a phone, tablet, or computer on the same home network is used to add photos and adjust settings.</p>
+          <div class="card callout"><p><strong>Local by design.</strong> Photos, albums, and settings are stored on the frame. The owner workspace is not a public website, and it currently has no sign-in screen. Use PiFrame only on a trusted network.</p></div>
+          <p>On its very first start, PiFrame creates a temporary Wi‑Fi network so you can give it the credentials for your home network. Once it joins, the temporary setup network disappears and the frame begins its normal startup.</p>
+        </section>
+
+        <section id="first-connection">
+          <h2>First connection: Wi‑Fi setup</h2>
+          <ol class="steps">
+            <li>Connect power to the frame and wait for it to start. Keep your phone, tablet, or computer nearby.</li>
+            <li>Open that device’s Wi‑Fi settings and join the network named <code>PiFrame Setup-XXXX</code>. The final four characters identify this particular frame. This is a temporary, open setup network.</li>
+            <li>After joining, the device should open the PiFrame setup page automatically. If it does not, open a browser; many devices show a “Sign in to Wi‑Fi network” notice that leads to the same page.</li>
+            <li>Choose your home Wi‑Fi network from the list, enter its password, and submit it. Wait while the frame joins the network.</li>
+            <li>Reconnect your phone, tablet, or computer to that same home Wi‑Fi network. The PiFrame setup network is no longer needed.</li>
+          </ol>
+          <div class="card warning"><p><strong>During setup, internet access may pause.</strong> Your device is connected directly to PiFrame’s temporary network, not your usual Wi‑Fi. If the portal does not appear, verify that you joined the <code>PiFrame Setup-XXXX</code> network and then open a browser.</p></div>
+          <p>When PiFrame has finished starting, open its owner workspace from another device on the same network. Use its local hostname in a browser: <code>http://&lt;frame-hostname&gt;.local</code>. If you do not know the hostname or address, open <strong>System Status</strong> once you can reach the workspace; it shows the current host name and IP address.</p>
+          <p>If a saved Wi‑Fi network cannot be joined on a later boot, PiFrame waits briefly and then opens the same temporary setup network again. Repeat the steps above to select a working network.</p>
+        </section>
+
+        <section id="start">
+          <h2>Quick start</h2>
+          <ol class="steps">
+            <li>Open the owner workspace and select <strong>Albums</strong>.</li>
+            <li>Create an album, open it, and upload a few photos.</li>
+            <li>Return to <strong>Dashboard</strong> to confirm that photos are ready.</li>
+            <li>Use <strong>Open frame</strong>, or look at the attached display, to see the slideshow.</li>
+          </ol>
+          <div class="card callout"><p>New photos are prepared in the background. A photo may briefly show as processing before it is available to the frame.</p></div>
+        </section>
+
+        <section id="views">
+          <h2>Views and controls</h2>
+
+          <article class="view"><span class="tag">On the frame</span><h3>Display</h3><p>This is the full-screen slideshow on PiFrame’s attached display. It has no controls during normal viewing.</p><ul><li>With no ready photos, it shows a waiting message.</li><li>When a daily schedule is off, the screen is black.</li><li>Depending on Presentation settings, it can show one photo or an adaptive arrangement of one, two, or three photos; the optional clock appears at the upper left.</li></ul></article>
+
+          <article class="view"><span class="tag">Owner workspace</span><h3>Dashboard</h3><p>The starting view gives a quick picture of the frame: whether it is displaying, which albums are used, layout, timing, schedule state, and library health.</p><ul><li><strong>Open frame</strong> opens the slideshow in the browser.</li><li><strong>Manage albums</strong> goes directly to the album list.</li><li>The library counts separate ready photos from those still preparing or needing attention.</li></ul></article>
+
+          <article class="view"><span class="tag">Owner workspace</span><h3>General</h3><p>Use this view to personalize the frame and set its physical orientation.</p><ul><li><strong>Frame name</strong> and <strong>Frame description</strong> identify the frame in the workspace. Saving the name does not change the device’s network hostname.</li><li><strong>Location</strong> can be searched to set the place; the advanced section lets you review or set the time zone. The time zone drives the clock and schedule.</li><li><strong>Display orientation</strong> rotates the slideshow to match how the physical screen is mounted.</li></ul></article>
+
+          <article class="view"><span class="tag">Owner workspace</span><h3>Presentation</h3><p>Choose what the frame plays and how it looks.</p><ul><li>Select <strong>Use all albums</strong>, or uncheck it and choose only the albums you want displayed.</li><li>Set seconds per photo and an ordering method: random, filename, upload date, or the manual photo order set inside an album.</li><li>Choose <strong>One photo</strong> or <strong>Adaptive</strong>. Adaptive selects balanced multi-photo layouts when suitable photos are available.</li><li>Use <strong>Fit entire photo</strong> to preserve the whole image, or <strong>Fill screen and crop edges</strong> for edge-to-edge presentation.</li><li>Turn on the clock and choose its format, size, date, and seconds. Choose a transition and its duration for slide changes.</li></ul></article>
+
+          <article class="view"><span class="tag">Owner workspace</span><h3>Schedule</h3><p>Set when the display should be on each day. When it is off, PiFrame shows a black screen rather than turning the device off.</p><ul><li>Enable the daily schedule, then set the on and off times in the frame’s local time.</li><li><strong>Follow schedule</strong> returns to those times.</li><li><strong>Force frame on</strong> and <strong>Force frame off</strong> are immediate overrides until you switch back to Follow schedule.</li></ul></article>
+
+          <article class="view"><span class="tag">Owner workspace</span><h3>Albums</h3><p>Albums organize the photo library. Create a new album in the bottom row, rename an existing album, or open its arrow to manage its photos.</p><ul><li>The photo count tells you how many photos belong to each album.</li><li>Deleting an album also deletes its contained photos and their managed copies. PiFrame asks for confirmation twice because this cannot be undone.</li></ul></article>
+
+          <article class="view"><span class="tag">Album detail</span><h3>Photos and upload queue</h3><p>Opening an album takes you to its photo-management view.</p><ul><li>Choose one or more supported image files, then select <strong>Upload</strong>. The queue tracks each file as it uploads and is processed.</li><li>If a filename already exists in the album, choose <strong>Keep both</strong>, <strong>Replace</strong>, or <strong>Skip</strong>. Resolve marked duplicates before uploading.</li><li><strong>Detail</strong> lists file name, dimensions, size, and actions. <strong>Grid</strong> shows thumbnails.</li><li>Sort by manual order, newest upload, or name. In manual order, drag photos in the grid to set the slideshow sequence; use Presentation’s manual ordering to play that sequence.</li><li>Rotate left or right to correct an image without altering the original. Retry a failed processing job, or delete an individual photo when it is no longer wanted.</li></ul></article>
+
+          <article class="view"><span class="tag">Owner workspace</span><h3>System Status</h3><p>This is the maintenance and troubleshooting view.</p><ul><li><strong>System</strong> shows the platform, local host name/address, and data locations.</li><li><strong>Storage</strong> lists where originals, thumbnails, and display assets are kept.</li><li><strong>Recent activity</strong> records useful events such as uploads and settings changes.</li><li>On a Raspberry Pi, the Power section can restart or shut down the entire device. After shutdown, wait until the display is dark before removing power.</li></ul></article>
+
+          <article class="view"><span class="tag">Overlay</span><h3>About PiFrame</h3><p>Select the PiFrame logo in the workspace to open the About window. It briefly describes the local-first design and shows version and attribution information. Close it to return to the current view.</p></article>
+        </section>
+
+        <section id="care">
+          <h2>Everyday care</h2>
+          <div class="card"><h3>When something looks wrong</h3><ul><li>If a new image is not visible yet, give its processing status a moment and check Dashboard or the album detail view.</li><li>If the display is black unexpectedly, check Schedule for an active off period or a Force frame off override.</li><li>If you cannot reach the workspace, confirm your controlling device and PiFrame are on the same network. A failed saved connection will make PiFrame offer its temporary setup network again.</li><li>Use System Status before restarting; its recent activity can help identify what happened.</li></ul></div>
+        </section>
+      </main>
+    </div>
+    <footer>PiFrame User Manual · Covers the installed, first-power-on experience and current owner workspace.</footer>
+  </body>
+</html>

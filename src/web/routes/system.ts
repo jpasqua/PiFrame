@@ -30,7 +30,22 @@ export async function handleSystemRoute(
     return true;
   }
 
-  const staticMatch = url.pathname.match(/^\/assets\/app\/([a-z0-9-]+\.(?:js|css))$/);
+  if (req.method === "GET" && url.pathname === "/help") {
+    try {
+      let manual: Buffer;
+      try {
+        manual = await readFile(resolve(process.cwd(), "src", "web", "static", "help", "index.html"));
+      } catch {
+        manual = await readFile(resolve(process.cwd(), "dist", "web", "static", "help", "index.html"));
+      }
+      sendHtml(res, 200, manual.toString("utf8"));
+    } catch {
+      sendPlainText(res, 404, "Help manual not found.");
+    }
+    return true;
+  }
+
+  const staticMatch = url.pathname.match(/^\/assets\/app\/((?:[a-z0-9-]+\/)*[a-z0-9-]+\.(?:js|css))$/);
   if (req.method === "GET" && staticMatch) {
     const filename = staticMatch[1];
     if (!filename) return false;
