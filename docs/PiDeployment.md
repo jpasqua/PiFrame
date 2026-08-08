@@ -88,10 +88,9 @@ it does not replace NetworkManager or write `wpa_supplicant` configuration files
 ### Normal boot and recovery flow
 
 1. If the marker is present, do not start the AP immediately.
-2. Let NetworkManager scan for and attempt saved connections for up to
-   60 seconds.
-3. If a saved connection succeeds, continue in normal mode without creating an
-   AP.
+2. Wait for NetworkManager's startup-complete event for up to 60 seconds.
+3. If an active Wi-Fi association exists after that event, continue in normal
+   mode without creating an AP.
 4. If none succeeds, start the same temporary AP and show recovery instructions
    on the HDMI display.
 5. Once the user supplies working credentials and the connection is verified,

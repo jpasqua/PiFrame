@@ -209,7 +209,8 @@ the selected credentials after a successful connection.
 
 `piframe-wifi-connect.service` owns only the appliance policy: a fresh frame
 starts WiFi Connect immediately; a previously provisioned frame gives saved
-connections 60 seconds to reconnect before WiFi Connect starts. The
+connections up to 60 seconds to finish NetworkManager startup before it checks
+for an active Wi-Fi association and starts WiFi Connect only if none exists. The
 `/var/lib/piframe/wifi-provisioned` marker distinguishes those cases. The
 developer installation above creates the marker because Wi-Fi was already
 configured in Raspberry Pi Imager. The offline provisioning bundle supplies a
