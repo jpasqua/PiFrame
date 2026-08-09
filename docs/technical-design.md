@@ -46,7 +46,7 @@ Schedule evaluation uses the frame's saved IANA time zone rather than the host p
 
 Location assistance is optional and explicitly initiated by the browser user. Browser coordinates are sent to PiFrame's local reverse-lookup endpoint for a place name and directly to Open-Meteo for time-zone resolution. The `LocationLookupService` serializes public Nominatim requests to at most one per second and caches rounded coordinates in memory. It returns a nearby city, region, and country.
 
-Typed location search and coordinate-to-time-zone resolution use Open-Meteo directly from the browser. Nominatim is isolated behind the service module so it can be replaced if policy, availability, or deployment requirements change. Provider attribution appears in the UI. Location is stored only after the user saves General settings.
+Typed location search and coordinate-to-time-zone resolution use Open-Meteo directly from the browser. Nominatim is isolated behind the service module so it can be replaced if policy, availability, or deployment requirements change. Provider attribution appears in the UI. Location is stored only after the user saves Frame settings.
 
 ## HTTP Boundaries
 

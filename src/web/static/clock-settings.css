@@ -6,3 +6,13 @@
 .clock-row select { width:100%; min-width:0; padding:8px 10px; border:1px solid #cdd0d4; border-radius:6px; background:#fff; font:inherit; }
 .clock-toggles { display:flex; flex-wrap:wrap; gap:12px; }
 .clock-toggles label { font-weight:400; }
+.weather-settings { display:grid; gap:10px; max-width:370px; }
+.weather-enabled { justify-self:start; }
+.weather-options { display:grid; gap:10px; padding:13px; border:1px solid var(--line); border-radius:8px; }
+.weather-options[hidden] { display:none; }
+.weather-toggles { display:flex; flex-wrap:wrap; gap:12px; }
+.weather-toggles label { font-weight:400; }
+.inline-field { display:grid; grid-template-columns:150px minmax(0,220px); align-items:center; gap:10px; max-width:380px; }
+.inline-field input,.inline-field select { width:100%; min-width:0; }
+.transition-fields { display:grid; gap:10px; }
+@media (max-width:480px) { .inline-field { grid-template-columns:1fr; gap:5px; } }

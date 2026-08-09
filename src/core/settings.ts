@@ -20,6 +20,10 @@ export interface DisplaySettings {
   clockShowSeconds: boolean;
   clockShowDate: boolean;
   clockSize: "small" | "medium" | "large";
+  weatherEnabled: boolean;
+  weatherShowCurrent: boolean;
+  weatherShowForecast: boolean;
+  weatherUnits: "imperial" | "metric";
 }
 
 export interface ScheduleSettings {
@@ -55,7 +59,11 @@ export function createDefaultDisplaySettings(): DisplaySettings {
     clockFormat: "locale-default",
     clockShowSeconds: false,
     clockShowDate: false,
-    clockSize: "medium"
+    clockSize: "medium",
+    weatherEnabled: false,
+    weatherShowCurrent: true,
+    weatherShowForecast: false,
+    weatherUnits: "imperial"
   };
 }
 
@@ -74,7 +82,13 @@ export interface FrameSettings {
   frameName: string;
   frameDescription: string;
   location: string;
+  weatherLocation?: WeatherLocation;
   timeZone: string;
   language: "en-US";
   displayOrientation: 0 | 90 | 180 | 270;
+}
+
+export interface WeatherLocation {
+  latitude: number;
+  longitude: number;
 }

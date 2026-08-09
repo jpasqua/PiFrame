@@ -13,6 +13,7 @@ import { PhotoRepository } from "./photo-repository.js";
 import { SettingsRepository } from "./settings-repository.js";
 import { SystemEventRepository } from "./system-event-repository.js";
 import { PhotoProcessor } from "../services/photo-processor.js";
+import { WeatherService } from "../services/weather.js";
 
 export interface AppContext {
   config: AppConfig;
@@ -21,6 +22,7 @@ export interface AppContext {
   settings: SettingsRepository;
   events: SystemEventRepository;
   processor: PhotoProcessor;
+  weather: WeatherService;
 }
 
 export function createAppContext(config: AppConfig): AppContext {
@@ -38,7 +40,8 @@ export function createAppContext(config: AppConfig): AppContext {
     photos,
     settings,
     events,
-    processor
+    processor,
+    weather: new WeatherService({ currentConditionsMs: 15 * 60 * 1_000, forecastMs: 3 * 60 * 60 * 1_000 })
   };
 }
 
@@ -54,6 +57,8 @@ function ensureDefaultSettings(settings: SettingsRepository): void {
   const displaySettings = settings.getJson<DisplaySettings>("display");
   if (!displaySettings) {
     settings.putJson("display", createDefaultDisplaySettings());
+  } else if (!Object.hasOwn(displaySettings, "weatherEnabled")) {
+    settings.putJson("display", { ...createDefaultDisplaySettings(), ...displaySettings });
   }
 
   const scheduleSettings = settings.getJson<ScheduleSettings>("schedule");

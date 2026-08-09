@@ -5,8 +5,8 @@ PiFrame is a local-first digital picture frame built with Node.js, TypeScript, S
 ## Current Features
 
 * SQLite-backed albums and managed photo storage
-* Unified owner workspace with Dashboard, General, Presentation, Schedule, Albums, and System Status views
-* General frame settings for identity, local description, location, time zone, language, and display orientation
+* Unified owner workspace with Dashboard, Frame, Presentation, Schedule, Albums, and System Status views
+* Frame settings for identity, local description, location, time zone, language, and display orientation
 * Assisted location setup using browser geolocation, place search, automatic time-zone resolution, and an editable advanced settings disclosure
 * Album creation, renaming, and two-step deletion that removes contained photos and managed assets
 * Album detail pages with a batch upload queue, Detail and Grid photo views, rotation, retry, and deletion actions
@@ -323,11 +323,11 @@ npm run build
 * Add an already-used filename to the queue; select Keep both, Replace, or Skip before uploading.
 * Rotate a ready photo and confirm both its thumbnail and slideshow image update.
 * Toggle the schedule or force-off setting and confirm `/display` becomes black.
-* Save General settings, including a location search or browser-location lookup, and confirm the selected time zone persists after reload.
+* Save Frame settings, including a location search or browser-location lookup, and confirm the selected time zone persists after reload.
 
 ## Location Lookup
 
-General settings keeps location editable while providing two optional, user-initiated helpers:
+Frame settings keeps location editable while providing two optional, user-initiated helpers:
 
 * **Use this device's location** asks the browser for coordinates, resolves a nearby city/region/country, and suggests the matching IANA time zone.
 * **Search location** finds matching places from typed city, region, country, or postal-code text. Select a result before saving.

@@ -1,5 +1,7 @@
 const locationInput = document.querySelector("#frame-location");
 const timeZoneInput = document.querySelector("#frame-time-zone");
+const weatherLatitudeInput = document.querySelector("#weather-latitude");
+const weatherLongitudeInput = document.querySelector("#weather-longitude");
 const searchButton = document.querySelector("#search-location");
 const status = document.querySelector("#location-lookup-status");
 const results = document.querySelector("#location-search-results");
@@ -8,7 +10,7 @@ const postalCodeLocationOverrides = new Map([
   ["93923", "Carmel, CA"]
 ]);
 
-if (locationInput && timeZoneInput && searchButton && status && results) {
+if (locationInput && timeZoneInput && weatherLatitudeInput && weatherLongitudeInput && searchButton && status && results) {
 
   function setStatus(message) {
     status.textContent = message;
@@ -23,6 +25,8 @@ if (locationInput && timeZoneInput && searchButton && status && results) {
     const label = [result.name, result.admin1, result.country].filter(Boolean).join(", ");
     locationInput.value = label || result.name || locationInput.value;
     if (result.timezone) timeZoneInput.value = result.timezone;
+    weatherLatitudeInput.value = Number.isFinite(result.latitude) ? String(result.latitude) : "";
+    weatherLongitudeInput.value = Number.isFinite(result.longitude) ? String(result.longitude) : "";
     clearResults();
     setStatus(`Using ${locationInput.value}. Confirm the advanced values if needed, then save General settings.`);
   }
@@ -97,4 +101,8 @@ if (locationInput && timeZoneInput && searchButton && status && results) {
   }
 
   searchButton.addEventListener("click", searchLocation);
+  locationInput.addEventListener("input", () => {
+    weatherLatitudeInput.value = "";
+    weatherLongitudeInput.value = "";
+  });
 }

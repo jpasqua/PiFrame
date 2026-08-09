@@ -20,24 +20,27 @@ export async function handleSettingsActions(context: AppContext, systemActions: 
     try {
       const form = await readForm(req);
       const current = context.settings.getJson<FrameSettings>("frame") ?? createDefaultFrameSettings();
+      const weatherLocation = parseWeatherLocation(form.weatherLatitude, form.weatherLongitude);
+      const { weatherLocation: _previousWeatherLocation, ...unchanged } = current;
       const settings: FrameSettings = {
-        ...current,
+        ...unchanged,
         frameName: parseFrameName(form.frameName),
         frameDescription: parseSingleLine(form.frameDescription, "Frame description", 80),
         location: parseSingleLine(form.location, "Location", 80),
+        ...(weatherLocation ? { weatherLocation } : {}),
         timeZone: parseTimeZone(form.timeZone),
         language: parseLanguage(form.language),
         displayOrientation: parseOrientation(form.displayOrientation)
       };
       context.settings.putJson("frame", settings);
-      context.events.record("info", "frame.settings_saved", "General frame settings saved.", {
+      context.events.record("info", "frame.settings_saved", "Frame settings saved.", {
         frameName: settings.frameName,
         timeZone: settings.timeZone,
         displayOrientation: settings.displayOrientation
       });
-      redirect(res, settingsLocation("general", "success", "General settings saved."));
+      redirect(res, settingsLocation("general", "success", "Frame settings saved."));
     } catch (error) {
-      redirect(res, settingsLocation("general", "error", error instanceof Error ? error.message : "Could not save general settings."));
+      redirect(res, settingsLocation("general", "error", error instanceof Error ? error.message : "Could not save frame settings."));
     }
     return true;
   }
@@ -50,6 +53,11 @@ export async function handleSettingsActions(context: AppContext, systemActions: 
       const selectedFolderIds = form.useAllFolders === "on" ? [] : parseSelectedFolders(form, context.folders.list().map((folder) => folder.id));
       if (form.useAllFolders !== "on" && selectedFolderIds.length === 0) { redirect(res, settingsLocation("presentation", "error", "Choose at least one album, or use all albums.")); return true; }
       const settings: DisplaySettings = { ...current, selectedFolderIds, photoDurationSeconds: parseInteger(form.photoDurationSeconds, current.photoDurationSeconds, 3, 3600, "Photo duration must be between 3 seconds and 1 hour."), transitionStyle: parseEnum(form.transitionStyle, current.transitionStyle, ["none", "crossfade", "fade-black", "slide-left", "slide-right", "slow-pan"]), transitionDurationSeconds: parseNumber(form.transitionDurationSeconds, current.transitionDurationSeconds, 0.2, 3, "Transition duration must be between 0.2 and 3 seconds."), imagePresentationMode: parseEnum(form.imagePresentationMode, current.imagePresentationMode, ["fit", "fill"]), orderMode: parseEnum(form.orderMode, current.orderMode, ["random", "filename-asc", "filename-desc", "upload-newest", "upload-oldest", "capture-newest", "capture-oldest", "manual"]), screenLayout: parseEnum(form.screenLayout, current.screenLayout, ["single", "multiple", "triple"]), clockEnabled: form.clockEnabled === "on", clockFormat: parseEnum(form.clockFormat, current.clockFormat, ["locale-default", "12h", "24h"]), clockShowSeconds: form.clockShowSeconds === "on", clockShowDate: form.clockShowDate === "on", clockSize: parseEnum(form.clockSize, current.clockSize, ["small", "medium", "large"]) };
+      settings.weatherEnabled = form.weatherEnabled === "on";
+      settings.weatherShowCurrent = form.weatherShowCurrent === "on";
+      settings.weatherShowForecast = form.weatherShowForecast === "on";
+      settings.weatherUnits = parseEnum(form.weatherUnits, current.weatherUnits, ["imperial", "metric"]);
+      if (settings.weatherEnabled && !settings.weatherShowCurrent && !settings.weatherShowForecast) throw new Error("Choose current conditions, forecast, or both when weather is enabled.");
       context.settings.putJson("display", settings);
       context.events.record("info", "presentation.settings_saved", "Presentation settings saved.", { selectedFolderCount: selectedFolderIds.length, useAllFolders: selectedFolderIds.length === 0, photoDurationSeconds: settings.photoDurationSeconds, imagePresentationMode: settings.imagePresentationMode, orderMode: settings.orderMode, screenLayout: settings.screenLayout, clockEnabled: settings.clockEnabled });
       redirect(res, settingsLocation("presentation", "success", "Presentation settings saved."));
@@ -112,6 +120,14 @@ function parseLanguage(raw: string | undefined): FrameSettings["language"] {
 function parseOrientation(raw: string | undefined): FrameSettings["displayOrientation"] {
   if (raw === "0" || raw === "90" || raw === "180" || raw === "270") return Number(raw) as FrameSettings["displayOrientation"];
   throw new Error("Choose a valid display orientation.");
+}
+
+function parseWeatherLocation(latitudeRaw: string | undefined, longitudeRaw: string | undefined): FrameSettings["weatherLocation"] {
+  if (!latitudeRaw?.trim() && !longitudeRaw?.trim()) return undefined;
+  const latitude = Number(latitudeRaw);
+  const longitude = Number(longitudeRaw);
+  if (!Number.isFinite(latitude) || latitude < -90 || latitude > 90 || !Number.isFinite(longitude) || longitude < -180 || longitude > 180) throw new Error("Choose a location from search to enable weather.");
+  return { latitude, longitude };
 }
 
 function parseSystemAction(raw: string | undefined): SystemAction {

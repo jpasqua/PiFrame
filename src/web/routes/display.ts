@@ -5,17 +5,33 @@ import { isDisplayOn, RandomDisplayPlanner, selectDisplaySlide } from "../displa
 import { sendHtml, sendJson } from "../http/responses.js";
 import { renderDisplayPage } from "../views/display.js";
 
-export function handleDisplayRoute(
+export async function handleDisplayRoute(
   context: AppContext,
   randomPlanner: RandomDisplayPlanner,
   req: IncomingMessage,
   res: ServerResponse,
   url: URL
-): boolean {
+): Promise<boolean> {
   if (req.method === "GET" && url.pathname === "/display") {
     const settings = context.settings.getJson<DisplaySettings>("display") ?? createDefaultDisplaySettings();
     const frame = context.settings.getJson<FrameSettings>("frame") ?? createDefaultFrameSettings();
     sendHtml(res, 200, renderDisplayPage(settings, frame, createPresentationVersion(settings, frame)));
+    return true;
+  }
+
+  if (req.method === "GET" && url.pathname === "/api/display/weather") {
+    const settings = context.settings.getJson<DisplaySettings>("display") ?? createDefaultDisplaySettings();
+    const frame = context.settings.getJson<FrameSettings>("frame") ?? createDefaultFrameSettings();
+    if (!settings.weatherEnabled || (!settings.weatherShowCurrent && !settings.weatherShowForecast) || !frame.weatherLocation) {
+      sendJson(res, 200, { available: false });
+      return true;
+    }
+    try {
+      const weather = await context.weather.getWeather({ ...frame.weatherLocation, timeZone: frame.timeZone }, settings.weatherUnits);
+      sendJson(res, 200, { available: true, ...weather, units: settings.weatherUnits });
+    } catch {
+      sendJson(res, 200, { available: false });
+    }
     return true;
   }
 
@@ -55,5 +71,5 @@ function displaySessionId(url: URL): string {
 }
 
 function createPresentationVersion(settings: DisplaySettings, frame: FrameSettings): string {
-  return JSON.stringify({ display: settings, language: frame.language, timeZone: frame.timeZone, displayOrientation: frame.displayOrientation });
+  return JSON.stringify({ display: settings, language: frame.language, timeZone: frame.timeZone, displayOrientation: frame.displayOrientation, weatherLocation: frame.weatherLocation });
 }

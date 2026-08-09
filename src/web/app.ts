@@ -30,7 +30,7 @@ export function createApp(context: AppContext): App {
 
       if (await handleSystemRoute(context, req, res, url)) return;
 
-      if (handleDisplayRoute(context, randomDisplayPlanner, req, res, url)) return;
+      if (await handleDisplayRoute(context, randomDisplayPlanner, req, res, url)) return;
       if (handleWorkspaceGetRoute(context, req, res, url)) return;
 
       if (await handleLocationRoute(locationLookup, req, res, url)) return;
