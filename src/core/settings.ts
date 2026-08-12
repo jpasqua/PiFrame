@@ -17,7 +17,6 @@ export interface DisplaySettings {
   imagePresentationMode: "fit" | "fill" | "fit-blur";
   clockEnabled: boolean;
   clockFormat: "locale-default" | "12h" | "24h";
-  clockShowSeconds: boolean;
   clockShowDate: boolean;
   clockSize: "small" | "medium" | "large";
   weatherEnabled: boolean;
@@ -57,7 +56,6 @@ export function createDefaultDisplaySettings(): DisplaySettings {
     imagePresentationMode: "fit",
     clockEnabled: false,
     clockFormat: "locale-default",
-    clockShowSeconds: false,
     clockShowDate: false,
     clockSize: "medium",
     weatherEnabled: false,

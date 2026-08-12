@@ -4,7 +4,7 @@ export function renderDisplayPage(settings: DisplaySettings, frame: FrameSetting
   const durationMs = Math.max(1_000, Math.round(settings.photoDurationSeconds * 1_000));
   const transitionMs = Math.round(Math.min(3, Math.max(.2, settings.transitionDurationSeconds)) * 1_000);
   const presentation = settings.imagePresentationMode === "fill" ? "cover" : "contain";
-  const clockSize = { small: "1rem", medium: "1.6rem", large: "2.4rem" }[settings.clockSize] ?? "1.6rem";
+  const clockSize = { small: "1.6rem", medium: "2.4rem", large: "3.6rem" }[settings.clockSize] ?? "2.4rem";
   return `<!doctype html>
 <html lang="en">
   <head>
@@ -36,7 +36,9 @@ export function renderDisplayPage(settings: DisplaySettings, frame: FrameSetting
       .photo-panel::before { content:""; position:absolute; inset:-7%; background:var(--photo-background) center / cover no-repeat; filter:blur(28px); transform:scale(1.08); opacity:.72; }
       img { position:relative; z-index:1; display:block; width:100%; height:100%; min-width:0; object-fit:${presentation}; background:transparent; }
       #empty { position:relative; z-index:1; max-width:32rem; padding:2rem; text-align:center; color:#bdb6aa; line-height:1.6; }
-      #clock { position:absolute; z-index:10; left:22px; top:18px; margin:0; color:rgba(255,255,255,.92); font-size:${clockSize}; font-variant-numeric:tabular-nums; letter-spacing:.03em; text-shadow:0 2px 5px #000; }
+      #clock { position:absolute; z-index:10; left:22px; top:18px; margin:0; color:rgba(255,255,255,.92); font-family:Arial,sans-serif; font-variant-numeric:tabular-nums; letter-spacing:.01em; line-height:1.05; text-shadow:0 2px 5px #000; }
+      #clock .clock-time { display:block; font-size:${clockSize}; font-weight:600; }
+      #clock .clock-date { display:block; font-size:calc(${clockSize} * .64); font-weight:600; margin-top:.08em; }
       #weather { position:absolute; z-index:10; right:22px; bottom:18px; margin:0; color:rgba(255,255,255,.95); font:600 1.65rem/1.25 Arial,sans-serif; font-variant-numeric:tabular-nums; text-align:right; text-shadow:0 2px 5px #000; }
       .weather-current { display:flex; align-items:center; justify-content:flex-end; gap:.75rem; white-space:nowrap; }
       .weather-forecast { display:grid; gap:.3rem; }
@@ -175,10 +177,10 @@ export function renderDisplayPage(settings: DisplaySettings, frame: FrameSetting
       function updateClock() {
         if (!clock) return;
         const date = new Date();
-        const timeOptions = { hour:"numeric", minute:"2-digit"${settings.clockShowSeconds ? ', second:"2-digit"' : ""}${settings.clockFormat === "12h" ? ", hour12:true" : settings.clockFormat === "24h" ? ", hour12:false" : ""} };
+        const timeOptions = { hour:"numeric", minute:"2-digit"${settings.clockFormat === "12h" ? ", hour12:true" : settings.clockFormat === "24h" ? ", hour12:false" : ""} };
         const time = new Intl.DateTimeFormat(${JSON.stringify(frame.language)}, { ...timeOptions, timeZone:${JSON.stringify(frame.timeZone)} }).format(date);
         const day = ${settings.clockShowDate ? `new Intl.DateTimeFormat(${JSON.stringify(frame.language)}, { timeZone:${JSON.stringify(frame.timeZone)}, weekday:"short", month:"short", day:"numeric" }).format(date)` : '""'};
-        clock.textContent = day ? day + "  " + time : time;
+        clock.innerHTML = '<span class="clock-time">' + time + '</span>' + (day ? '<span class="clock-date">' + day + '</span>' : '');
       }
 
       function weatherIcon(code) {
@@ -285,7 +287,7 @@ export function renderDisplayPage(settings: DisplaySettings, frame: FrameSetting
       advance();
       setInterval(pollSchedule, 5000);
       updateClock();
-      setInterval(updateClock, 1000);
+      setInterval(updateClock, 15_000);
     </script>
   </body>
 </html>`;
