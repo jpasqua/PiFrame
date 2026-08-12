@@ -37,11 +37,11 @@ export function renderDisplayPage(settings: DisplaySettings, frame: FrameSetting
       img { position:relative; z-index:1; display:block; width:100%; height:100%; min-width:0; object-fit:${presentation}; background:transparent; }
       #empty { position:relative; z-index:1; max-width:32rem; padding:2rem; text-align:center; color:#bdb6aa; line-height:1.6; }
       #clock { position:absolute; z-index:10; left:22px; top:18px; margin:0; color:rgba(255,255,255,.92); font-size:${clockSize}; font-variant-numeric:tabular-nums; letter-spacing:.03em; text-shadow:0 2px 5px #000; }
-      #weather { position:absolute; z-index:10; right:22px; bottom:18px; margin:0; color:rgba(255,255,255,.95); font:600 1.1rem/1.25 Arial,sans-serif; font-variant-numeric:tabular-nums; text-align:right; text-shadow:0 2px 5px #000; }
-      .weather-current { display:flex; align-items:center; justify-content:flex-end; gap:.5rem; white-space:nowrap; }
-      .weather-forecast { display:grid; gap:.2rem; }
-      .weather-day { display:grid; grid-template-columns:3rem 5.4rem 1.45rem; align-items:center; justify-content:end; gap:.45rem; white-space:nowrap; }
-      .weather-icon { width:1.35rem; height:1.35rem; fill:none; stroke:currentColor; stroke-width:1.7; stroke-linecap:round; stroke-linejoin:round; filter:drop-shadow(0 2px 3px #000); }
+      #weather { position:absolute; z-index:10; right:22px; bottom:18px; margin:0; color:rgba(255,255,255,.95); font:600 1.65rem/1.25 Arial,sans-serif; font-variant-numeric:tabular-nums; text-align:right; text-shadow:0 2px 5px #000; }
+      .weather-current { display:flex; align-items:center; justify-content:flex-end; gap:.75rem; white-space:nowrap; }
+      .weather-forecast { display:grid; gap:.3rem; }
+      .weather-day { display:grid; grid-template-columns:4.5rem 8.1rem 2.175rem; align-items:center; justify-content:end; gap:.675rem; white-space:nowrap; }
+      .weather-icon { width:2.025rem; height:2.025rem; fill:none; stroke:currentColor; stroke-width:1.7; stroke-linecap:round; stroke-linejoin:round; filter:drop-shadow(0 2px 3px #000); }
       .weather-icon .fill { fill:currentColor; stroke:none; }
       @media (prefers-reduced-motion:reduce) { .stage { transition:none !important; } }
     </style>
