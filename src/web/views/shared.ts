@@ -13,7 +13,8 @@ export function readFlash(url: URL): FlashMessage {
 
 export function renderFlash(flash: FlashMessage): string {
   if (!flash.message || !flash.kind) return "";
-  return `<div class="flash ${flash.kind}" style="transition:opacity .35s ease">${escapeHtml(flash.message)}</div><script>const flash=document.currentScript.previousElementSibling;const flashUrl=new URL(window.location.href);flashUrl.searchParams.delete("success");flashUrl.searchParams.delete("error");history.replaceState(null,"",flashUrl);window.setTimeout(()=>{flash.style.opacity="0";window.setTimeout(()=>flash.remove(),350);},10000);</script>`;
+  const role = flash.kind === "error" ? "alert" : "status";
+  return `<div class="flash ${flash.kind}" role="${role}" style="position:fixed;right:clamp(18px,5vw,60px);bottom:24px;z-index:1000;max-width:min(32rem,calc(100vw - 36px));margin:0;pointer-events:none;transition:opacity .35s ease,transform .35s ease">${escapeHtml(flash.message)}</div><script>const flash=document.currentScript.previousElementSibling;const flashUrl=new URL(window.location.href);flashUrl.searchParams.delete("success");flashUrl.searchParams.delete("error");history.replaceState(null,"",flashUrl);window.setTimeout(()=>{flash.style.opacity="0";flash.style.transform="translateY(12px)";window.setTimeout(()=>flash.remove(),350);},10000);</script>`;
 }
 
 export function renderLogo(width: number): string {

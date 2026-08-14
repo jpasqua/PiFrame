@@ -1,31 +1,33 @@
 :root {
-  --accent: #8c1b11;
-  --accent-hover: #6f160f;
-  --accent-pale: #f6e5dc;
-  --accent-soft: #fcf3ee;
-  --success: #7a3518;
-  --success-bg: #f7eadf;
+  --accent: #d89249;
+  --accent-hover: #98562c;
+  --accent-ink: #332012;
+  --accent-pale: #e3a75e;
+  --accent-soft: #fff4e4;
+  --success: #157b6d;
+  --success-bg: #e4f4f2;
 }
 
-/* PiFrame's logo uses a pie-inspired palette: berry red, warm wood brown,
-   and crust gold. Keep the application's existing neutral surfaces intact. */
+/* Warm gold and brown accents keep the logo palette distinct from errors. */
+button { color: var(--accent-ink); }
+button.save, .album-create .album-action, .upload-form button:not(.clear-queue-button), .upload-choice button.selected { color: var(--accent-ink); }
 .mark { box-shadow: inset 0 0 0 5px var(--accent-pale); }
 nav button.active, nav button:hover { background: var(--accent-soft); }
-.orientation-choice:hover .orientation-screen { border-color: #d39a55; background: #fff8ed; }
-.orientation-choice input:checked + .orientation-screen { background: var(--accent-soft); box-shadow: 0 0 0 3px rgba(140, 27, 17, .16); }
-.orientation-choice input:focus-visible + .orientation-screen { outline-color: rgba(140, 27, 17, .38); }
+.orientation-choice:hover .orientation-screen { border-color: var(--accent-pale); background: #fff8ed; }
+.orientation-choice input:checked + .orientation-screen { background: var(--accent-soft); box-shadow: 0 0 0 3px rgba(216, 146, 73, .16); }
+.orientation-choice input:focus-visible + .orientation-screen { outline-color: rgba(216, 146, 73, .38); }
 .album-name:hover { color: var(--accent-hover); }
 
 nav a:hover { background: var(--accent-soft); }
-nav a.album-nested { color: #71371b; background: #fbefe2; border-left-color: #d39a55; }
-nav a.album-nested small { color: #9a6635; }
+nav a.album-nested { color: var(--accent-hover); background: #fff4e4; border-left-color: var(--accent-pale); }
+nav a.album-nested small { color: var(--accent-hover); }
 .photo-actions button:hover, .photo-actions button:focus-visible { background: var(--accent-soft); }
 .secondary-action:hover { background: var(--accent-soft); }
-.location-result:hover { border-color: #d39a55; background: #fff8ed; }
+.location-result:hover { border-color: var(--accent-pale); background: #fff8ed; }
 
-.help-toc { margin:4px 0 0 15px; padding:6px 0 6px 10px; border-left:1px solid #d39a55; gap:0; }
+.help-toc { margin:4px 0 0 15px; padding:6px 0 6px 10px; border-left:1px solid var(--accent-pale); gap:0; }
 .help-toc[hidden] { display:none; }
-.help-toc a { padding:4px 3px; color:#71371b; font-size:.82rem; text-decoration:none; }
+.help-toc a { padding:4px 3px; color:var(--accent-hover); font-size:.82rem; text-decoration:none; }
 .help-toc a:hover { color:var(--accent); background:transparent; }
 .top { margin-bottom:16px; }
 .help-panel { margin:0; height:auto; min-height:0; }
