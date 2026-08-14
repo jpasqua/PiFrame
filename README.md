@@ -217,6 +217,62 @@ configured in Raspberry Pi Imager. The offline provisioning bundle supplies a
 pinned WiFi Connect binary and UI so the Pi never needs Internet access to
 enter setup mode.
 
+### Pi services and launch sequence
+
+PiFrame relies on the following system-managed components. Only the two
+`piframe-*.service` units are PiFrame systemd services; NetworkManager and
+Avahi are Raspberry Pi OS services PiFrame uses.
+
+```text
+NetworkManager ──> piframe-wifi-connect.service ──> piframe.service
+       │                                                  │
+       │                                                  └── local HTTP app on port 80
+       │
+       └── saved Wi-Fi connection, or WiFi Connect portal
+
+Graphical autologin ──> piframe-kiosk.desktop ──> piframe-kiosk
+                                                    │
+                                                    ├── local setup/status page
+                                                    └── Chromium kiosk at /display once /health succeeds
+```
+
+* **`NetworkManager.service`** is provided by Raspberry Pi OS. It manages saved
+  Wi-Fi profiles and the wireless adapter. PiFrame waits for it before making
+  a connectivity decision.
+* **`piframe-wifi-connect.service`** is a one-shot, boot-time gate that runs as
+  root before the web app. Its `/usr/local/sbin/piframe-wifi-connect` wrapper
+  immediately launches balena WiFi Connect for an unprovisioned frame. For an
+  already provisioned frame it waits up to 60 seconds for NetworkManager to
+  activate a saved connection; only if no Wi-Fi connection becomes active does
+  it launch the open `PiFrame Setup-XXXX` captive portal. It remains active
+  after completing so `piframe.service` can require it.
+* **balena WiFi Connect** is started by that wrapper, not installed as a
+  separate systemd unit. While it is needed it creates the setup access point,
+  serves the captive portal, scans nearby networks, and saves the chosen
+  NetworkManager connection. It exits after Wi-Fi connects successfully.
+* **`piframe.service`** runs the Node application as user `piframe`. It
+  requires and starts after `piframe-wifi-connect.service`, listens on port 80
+  on a developer Pi, restarts automatically if the app exits, and serves both
+  the owner workspace and `/display`.
+* **`piframe-kiosk.desktop`** is a user-session autostart entry rather than a
+  system service. Graphical autologin starts `/usr/local/sbin/piframe-kiosk`.
+  That launcher first opens a local, offline-safe instruction page in
+  Chromium, polls PiFrame's loopback `/health` endpoint, then replaces the
+  page with the full-screen `/display` view. This keeps Chromium from showing
+  an error page during Wi-Fi setup or application startup.
+* **`piframe-system-action`** is a small root-owned helper, invoked through a
+  narrowly scoped sudoers rule when the System Status page requests restart or
+  shutdown. It is not a long-running service.
+* **`avahi-daemon.service`** is provided by Raspberry Pi OS and advertises the
+  host as `<hostname>.local`; it is why an owner can normally open PiFrame
+  without discovering the device IP address.
+
+At boot, systemd first lets NetworkManager establish any saved Wi-Fi
+connection, then completes the Wi-Fi gate, then starts the web app. Separately,
+the graphical session launches the kiosk; the kiosk waits until the web app is
+healthy before showing the frame. This means the service startup order is
+reliable even when the desktop session becomes ready first.
+
 #### Developer portal tests
 
 These scripts intentionally remove and restore a developer Pi's Wi-Fi
