@@ -217,6 +217,27 @@ configured in Raspberry Pi Imager. The offline provisioning bundle supplies a
 pinned WiFi Connect binary and UI so the Pi never needs Internet access to
 enter setup mode.
 
+#### Developer portal tests
+
+These scripts intentionally remove and restore a developer Pi's Wi-Fi
+connection. They are not part of the normal owner experience:
+
+```bash
+/opt/piframe/scripts/disconnect-wifi.sh
+```
+
+The disconnect script queues recovery before deleting the active Wi-Fi profile,
+so it is safe to invoke over SSH even though that SSH session immediately ends.
+It starts the `PiFrame Setup-XXXX` portal. To restore Wi-Fi manually from a
+local terminal, use:
+
+```bash
+/opt/piframe/scripts/reconnect-wifi.sh
+```
+
+It prompts for the SSID and password, saves the connection through
+NetworkManager, and starts PiFrame again.
+
 ### Migrating from the experimental portal
 
 The original experimental `piframe-network.service` is incompatible with WiFi
