@@ -28,17 +28,18 @@ PiFrame is a local-first digital picture frame built with Node.js, TypeScript, S
 
 ### Raspberry Pi developer setup
 
-This path is for a developer setting up a Pi directly from GitHub. It is
-separate from the offline USB provisioning path described in
-[docs/PiImageBuild.md](docs/PiImageBuild.md).
+This path is for a developer setting up a Pi directly from GitHub.
 
-Note: If you've run this process before and already have an Imdage to begin with, you can use it and skip to step 5.
+Note: If you've created an image previously (step 4), then you can use it and skip to step 5.
 
 1. Use Raspberry Pi Imager to write the full 64-bit Raspberry Pi OS desktop
-   image. In its customisation settings, choose a hostname unique on the
-   developer's network (for example `piframe-joe`), create the `piframe` user,
-   set Wi-Fi country/locale/time zone, configure Wi-Fi, and optionally enable
-   SSH.
+   image. In its customization settings
+   * Set the hostname to `piframe` or choose a unique name for the
+   developer's network (e.g. `piframe-123`)
+   * Create the `piframe` user
+   * Set Wi-Fi country/locale/time zone
+   * Configure Wi-Fi
+   * Optionally enable SSH.
 2. Boot the Pi and log in as `piframe`.
 3. Update the OS and install build/runtime prerequisites:
 
@@ -56,124 +57,18 @@ Note: If you've run this process before and already have an Imdage to begin with
 
 4. [Optional] Save an image of the SD Card at this state. See below for the **Raspberry Pi SD Card: Backup & Restore Guide**
 
-5. Install Node 22, then clone, build, and verify PiFrame. Run these commands
-   as `piframe`, without `sudo`:
+5. Download and run the PiFrame developer installer as `piframe`:
 
    ```bash
-   curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.6/install.sh | bash
-   source "$HOME/.bashrc"
-
-   nvm install 22
-   nvm alias default 22
-   node --version
-   npm --version
-   ```
-   
-
-6. Install PiFrame
-
-   ```bash
-   sudo git clone https://github.com/jpasqua/PiFrame.git /opt/piframe
-   sudo chown -R piframe:piframe /opt/piframe
-   cd /opt/piframe
-   npm ci
-   npm run check
-   npm run build
+   curl -fsSL -o /tmp/install-piframe.sh \
+     https://raw.githubusercontent.com/jpasqua/PiFrame/main/scripts/install-piframe.sh
+   bash /tmp/install-piframe.sh
    ```
 
-   `node --version` must report `v22` (or newer). The `nvm` installer and
-   update instructions are maintained by the [official nvm
-   project](https://github.com/nvm-sh/nvm#installing-and-updating).
-
-7. Prepare the Wi-Fi Connect files on the host computer and copy the resulting
-   `piframe-provision` directory to a USB flash drive. This download happens on
-   the host, never on the Pi, and verifies the pinned official release assets:
-
-   ```bash
-   cd /path/to/PiFrame
-   node scripts/prepare-wifi-connect-bundle.mjs /path/to/usb-root
-   ```
-
-   This developer path targets the 64-bit Raspberry Pi OS image. The script
-   places the binary and portal UI under
-   `piframe-provision/wifi-connect/` on the USB drive.
-
-8. Install the service and kiosk autostart files. First obtain the absolute
-   Node path and the `piframe` UID:
-
-   ```bash
-   NODE_PATH="$(command -v node)"
-   PIFRAME_UID="$(id -u piframe)"
-   printf '%s\n' "$NODE_PATH" "$PIFRAME_UID"
-   ```
-
-   Then install the templates and replace `ExecStart` with the Node path shown
-   above. This is necessary because a systemd service does not load `nvm` from
-   `.bashrc`:
-
-   ```bash
-   sudo install -D -m 0644 \
-     /opt/piframe/deploy/systemd/piframe.service.example \
-     /etc/systemd/system/piframe.service
-   sudo sed -i "s|^User=.*|User=piframe|" \
-     /etc/systemd/system/piframe.service
-   sudo sed -i "s|^Environment=PIFRAME_HOST=.*|Environment=PIFRAME_HOST=0.0.0.0|" \
-     /etc/systemd/system/piframe.service
-   sudo sed -i "s|^ExecStart=.*|ExecStart=${NODE_PATH} /opt/piframe/dist/server.js|" \
-     /etc/systemd/system/piframe.service
-   sudo sed -i '/^Environment=PIFRAME_WAYLAND_DISPLAY=/d; /^Environment=PIFRAME_WAYLAND_RUNTIME_DIR=/d' \
-     /etc/systemd/system/piframe.service
-   sudo sed -i \
-     "/^Environment=PIFRAME_PLATFORM=/a Environment=PIFRAME_WAYLAND_RUNTIME_DIR=/run/user/${PIFRAME_UID}" \
-     /etc/systemd/system/piframe.service
-
-   sudo install -D -o root -g root -m 0755 \
-     /opt/piframe/deploy/system/piframe-kiosk \
-     /usr/local/sbin/piframe-kiosk
-   sudo install -D -o root -g root -m 0644 \
-     /opt/piframe/deploy/kiosk/kiosk-connecting.html \
-     /usr/local/share/piframe/kiosk-connecting.html
-
-   install -D -m 0644 \
-     /opt/piframe/deploy/autostart/piframe-kiosk.desktop.example \
-     "$HOME/.config/autostart/piframe-kiosk.desktop"
-
-   sudo install -D -o root -g root -m 0755 \
-     /opt/piframe/deploy/system/piframe-system-action \
-     /usr/local/sbin/piframe-system-action
-   sudo install -D -o root -g root -m 0440 \
-     /opt/piframe/deploy/sudoers/piframe-system-action \
-     /etc/sudoers.d/piframe-system-action
-   sudo visudo -cf /etc/sudoers.d/piframe-system-action
-
-   # Adjust this to the USB drive's actual mount point.
-   PIFRAME_USB=/media/piframe/<USB_LABEL>
-   PIFRAME_WIFI_BUNDLE="$PIFRAME_USB/piframe-provision/wifi-connect"
-   PIFRAME_WIFI_TEMP="$(mktemp -d)"
-   tar -xzf "$PIFRAME_WIFI_BUNDLE/wifi-connect-aarch64-unknown-linux-gnu.tar.gz" \
-     -C "$PIFRAME_WIFI_TEMP"
-   sudo install -D -o root -g root -m 0755 \
-     "$PIFRAME_WIFI_TEMP/wifi-connect" /usr/local/sbin/wifi-connect
-   sudo install -d -o root -g root -m 0755 /usr/local/share/wifi-connect/ui
-   sudo tar -xzf "$PIFRAME_WIFI_BUNDLE/wifi-connect-ui.tar.gz" \
-     -C /usr/local/share/wifi-connect/ui
-   rm -rf "$PIFRAME_WIFI_TEMP"
-
-   sudo install -D -o root -g root -m 0755 \
-     /opt/piframe/deploy/system/piframe-wifi-connect \
-     /usr/local/sbin/piframe-wifi-connect
-   sudo install -D -o root -g root -m 0644 \
-     /opt/piframe/deploy/systemd/piframe-wifi-connect.service.example \
-     /etc/systemd/system/piframe-wifi-connect.service
-
-   sudo systemctl daemon-reload
-   sudo install -d -m 0755 /var/lib/piframe
-   sudo touch /var/lib/piframe/wifi-provisioned
-   sudo systemctl enable --now piframe-wifi-connect.service
-   sudo systemctl enable --now piframe.service
-   sleep 5
-   curl -fsS http://127.0.0.1/health
-   ```
+   The script installs Node 22, clones and builds PiFrame, installs the
+   services and kiosk files, downloads and verifies the pinned WiFi Connect
+   release, enables PiFrame, and checks the local health endpoint. It is for a
+   new image and stops rather than overwriting an existing `/opt/piframe`.
 
    The developer setup deliberately listens on the local network, so the owner
    workspace can be opened from another trusted machine at
@@ -213,9 +108,7 @@ connections up to 60 seconds to finish NetworkManager startup before it checks
 for an active Wi-Fi association and starts WiFi Connect only if none exists. The
 `/var/lib/piframe/wifi-provisioned` marker distinguishes those cases. The
 developer installation above creates the marker because Wi-Fi was already
-configured in Raspberry Pi Imager. The offline provisioning bundle supplies a
-pinned WiFi Connect binary and UI so the Pi never needs Internet access to
-enter setup mode.
+configured in Raspberry Pi Imager.
 
 ### Pi services and launch sequence
 
@@ -293,41 +186,6 @@ local terminal, use:
 
 It prompts for the SSID and password, saves the connection through
 NetworkManager, and starts PiFrame again.
-
-### Migrating from the experimental portal
-
-The original experimental `piframe-network.service` is incompatible with WiFi
-Connect and must be removed when updating an existing frame. First ensure the
-frame is connected to its normal network, then install the WiFi Connect bundle
-and run the following once:
-
-```bash
-cd /opt/piframe
-git pull --ff-only
-npm ci
-npm run build
-
-sudo systemctl disable --now piframe-network.service || true
-sudo rm -f /etc/systemd/system/piframe-network.service /usr/local/sbin/piframe-network-manager
-sudo rm -f /etc/systemd/system/piframe.service.d/network.conf
-sudo install -D -o root -g root -m 0644 \
-  /opt/piframe/deploy/systemd/piframe-wifi-connect-dependency.conf.example \
-  /etc/systemd/system/piframe.service.d/wifi-connect.conf
-
-# Repeat the WiFi Connect binary/UI and service installation commands from step 8.
-sudo systemctl daemon-reload
-sudo touch /var/lib/piframe/wifi-provisioned
-sudo systemctl enable piframe-wifi-connect.service
-sudo systemctl restart piframe.service
-```
-
-The marker preserves normal boot behavior on an already connected developer
-frame. To deliberately test recovery later, remove it and reboot:
-
-```bash
-sudo rm -f /var/lib/piframe/wifi-provisioned
-sudo reboot
-```
 
 ### Update an installed PiFrame
 
