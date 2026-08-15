@@ -6,10 +6,12 @@ set -euo pipefail
 readonly PIFRAME_USER="piframe"
 readonly PIFRAME_REPOSITORY="https://github.com/jpasqua/PiFrame.git"
 readonly PIFRAME_DIRECTORY="/opt/piframe"
-readonly NVM_VERSION="v0.40.6"
-readonly WIFI_CONNECT_VERSION="v4.11.84"
-readonly WIFI_CONNECT_BINARY_SHA256="413d70e6d1c1366cbe2b32555e8476f3e92878178ed1b9c82205985f055f1936"
-readonly WIFI_CONNECT_UI_SHA256="e57a3cec559729516decf892beb1e7f191b23e71b2e13bcd43d36b980034ffbe"
+# Prefix shell variables that could otherwise collide with programs sourced by
+# this installer. In particular, nvm manages its own NVM_VERSION variable.
+readonly PIFRAME_NVM_RELEASE="v0.40.6"
+readonly PIFRAME_WIFI_CONNECT_RELEASE="v4.11.84"
+readonly PIFRAME_WIFI_CONNECT_BINARY_SHA256="413d70e6d1c1366cbe2b32555e8476f3e92878178ed1b9c82205985f055f1936"
+readonly PIFRAME_WIFI_CONNECT_UI_SHA256="e57a3cec559729516decf892beb1e7f191b23e71b2e13bcd43d36b980034ffbe"
 
 fail() {
   echo "Error: $*" >&2
@@ -29,8 +31,8 @@ sudo -v
 
 NVM_DIR="$HOME/.nvm"
 if [[ ! -s "$NVM_DIR/nvm.sh" ]]; then
-  echo "Installing nvm $NVM_VERSION..."
-  curl -fsSL "https://raw.githubusercontent.com/nvm-sh/nvm/$NVM_VERSION/install.sh" | bash
+  echo "Installing nvm $PIFRAME_NVM_RELEASE..."
+  curl -fsSL "https://raw.githubusercontent.com/nvm-sh/nvm/$PIFRAME_NVM_RELEASE/install.sh" | bash
 fi
 
 # shellcheck disable=SC1090
@@ -87,13 +89,13 @@ WIFI_CONNECT_UI_ARCHIVE="$WIFI_CONNECT_TEMP/wifi-connect-ui.tar.gz"
 cleanup() { rm -rf "$WIFI_CONNECT_TEMP"; }
 trap cleanup EXIT
 
-echo "Downloading WiFi Connect $WIFI_CONNECT_VERSION..."
+echo "Downloading WiFi Connect $PIFRAME_WIFI_CONNECT_RELEASE..."
 curl -fsSL -o "$WIFI_CONNECT_ARCHIVE" \
-  "https://github.com/balena-os/wifi-connect/releases/download/$WIFI_CONNECT_VERSION/wifi-connect-aarch64-unknown-linux-gnu.tar.gz"
-echo "$WIFI_CONNECT_BINARY_SHA256  $WIFI_CONNECT_ARCHIVE" | sha256sum -c -
+  "https://github.com/balena-os/wifi-connect/releases/download/$PIFRAME_WIFI_CONNECT_RELEASE/wifi-connect-aarch64-unknown-linux-gnu.tar.gz"
+echo "$PIFRAME_WIFI_CONNECT_BINARY_SHA256  $WIFI_CONNECT_ARCHIVE" | sha256sum -c -
 curl -fsSL -o "$WIFI_CONNECT_UI_ARCHIVE" \
-  "https://github.com/balena-os/wifi-connect/releases/download/$WIFI_CONNECT_VERSION/wifi-connect-ui.tar.gz"
-echo "$WIFI_CONNECT_UI_SHA256  $WIFI_CONNECT_UI_ARCHIVE" | sha256sum -c -
+  "https://github.com/balena-os/wifi-connect/releases/download/$PIFRAME_WIFI_CONNECT_RELEASE/wifi-connect-ui.tar.gz"
+echo "$PIFRAME_WIFI_CONNECT_UI_SHA256  $WIFI_CONNECT_UI_ARCHIVE" | sha256sum -c -
 
 tar -xzf "$WIFI_CONNECT_ARCHIVE" -C "$WIFI_CONNECT_TEMP"
 [[ -f "$WIFI_CONNECT_TEMP/wifi-connect" ]] || fail "WiFi Connect archive did not contain its binary."
