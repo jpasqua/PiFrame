@@ -35,7 +35,9 @@ export function renderDisplayPage(settings: DisplaySettings, frame: FrameSetting
       .photo-panel { position:relative; min-width:0; min-height:0; margin:0; overflow:hidden; background:#000; }
       .photo-panel::before { content:""; position:absolute; inset:-7%; background:var(--photo-background) center / cover no-repeat; filter:blur(28px); transform:scale(1.08); opacity:.72; }
       img { position:relative; z-index:1; display:block; width:100%; height:100%; min-width:0; object-fit:${presentation}; background:transparent; }
-      #empty { position:relative; z-index:1; max-width:32rem; padding:2rem; text-align:center; color:#bdb6aa; line-height:1.6; }
+      #empty { position:relative; z-index:1; max-width:850px; padding:7vw; text-align:center; }
+      #empty h1 { margin:0 0 .35em; color:#fff; font-size:clamp(2.2rem,6vw,5rem); font-weight:400; line-height:1.06; }
+      #empty p { max-width:680px; margin:0 auto; color:#d6d2c9; font-size:clamp(1.05rem,2.2vw,1.55rem); line-height:1.55; }
       #clock { position:absolute; z-index:10; left:22px; top:18px; margin:0; color:rgba(255,255,255,.92); font-family:Arial,sans-serif; font-variant-numeric:tabular-nums; letter-spacing:.01em; line-height:1.05; text-shadow:0 2px 5px #000; }
       #clock .clock-time { display:block; font-size:${clockSize}; font-weight:600; }
       #clock .clock-date { display:block; font-size:calc(${clockSize} * .64); font-weight:600; margin-top:.08em; }
@@ -52,7 +54,7 @@ export function renderDisplayPage(settings: DisplaySettings, frame: FrameSetting
     <main class="orientation-${frame.displayOrientation.toString()}">
       <section id="display-surface">
         <section id="stage-host"></section>
-        <p id="empty">Waiting for a ready photo. Upload images from the local administration page.</p>
+        <section id="empty"><h1>Waiting for photos</h1><p>Upload images from the local administration page to begin the slideshow.</p></section>
         ${settings.clockEnabled ? `<time id="clock"></time>` : ""}
         ${settings.weatherEnabled ? `<section id="weather" aria-live="polite" hidden></section>` : ""}
       </section>
