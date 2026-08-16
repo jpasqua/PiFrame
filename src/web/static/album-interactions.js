@@ -12,6 +12,30 @@ document.addEventListener("DOMContentLoaded", () => {
   const detailList = document.querySelector('[data-photo-view="detail"] tbody');
   const sort = document.querySelector("#photo-sort");
   const status = document.querySelector("#photo-order-status");
+  const previewDialog = document.querySelector("#photo-preview-dialog");
+  const previewImage = document.querySelector("#photo-preview-image");
+
+  document.addEventListener("click", (event) => {
+    const trigger = event.target.closest("[data-photo-preview-src]");
+    if (trigger && previewDialog && previewImage) {
+      previewImage.src = trigger.dataset.photoPreviewSrc;
+      previewImage.alt = trigger.dataset.photoPreviewAlt ?? "";
+      previewDialog.showModal();
+      return;
+    }
+
+    if (event.target.closest("[data-photo-preview-close]") && previewDialog) {
+      previewDialog.close();
+      return;
+    }
+
+    if (event.target === previewDialog) previewDialog.close();
+  });
+
+  previewDialog?.addEventListener("close", () => {
+    if (previewImage) previewImage.removeAttribute("src");
+  });
+
   if (!grid || !sort) return;
 
   let manualOrder = tileIds();
