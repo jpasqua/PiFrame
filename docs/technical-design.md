@@ -52,7 +52,7 @@ Typed location search and coordinate-to-time-zone resolution use Open-Meteo dire
 
 The server binds to loopback by default. State-changing requests check the request origin, but that is not authentication. Static assets and managed photo derivatives are served through explicit route handlers; managed paths are derived from UUID-backed records rather than client-supplied filesystem paths.
 
-The public HTTP shape comprises owner workspace pages, kiosk display and selection endpoints, managed image media, health reporting, and narrowly scoped JSON actions. Legacy administration URLs redirect into the unified workspace rather than maintaining separate page implementations.
+The public HTTP shape comprises Administration pages, kiosk display and selection endpoints, managed image media, health reporting, and narrowly scoped JSON actions. Legacy administration URLs redirect into the unified Administration interface rather than maintaining separate page implementations.
 
 ## Future Platform Boundary
 

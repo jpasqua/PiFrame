@@ -1,15 +1,15 @@
 # PiFrame
 
-PiFrame is a local-first digital picture frame built with Node.js, TypeScript, SQLite, and Sharp. It runs as a lightweight local web application: the owner workspace manages albums and display settings, while `/display` is the Chromium-kiosk-friendly slideshow view.
+PiFrame is a local-first digital picture frame built with Node.js, TypeScript, SQLite, and Sharp. It runs as a lightweight local web application: Administration manages albums and display settings, while `/display` is the Chromium-kiosk-friendly slideshow view.
 
 ## Current Features
 
 * SQLite-backed albums and managed photo storage
-* Unified owner workspace with Dashboard, Frame, Presentation, Schedule, Albums, and System Status views
+* Unified Administration interface with Dashboard, Frame, Presentation, Schedule, Albums, and System Status views
 * Frame settings for identity, local description, location, time zone, language, and display orientation
 * Assisted location setup using browser geolocation, place search, automatic time-zone resolution, and an editable advanced settings disclosure
 * Album creation, renaming, and two-step deletion that removes contained photos and managed assets
-* Album detail pages with a batch upload queue, Detail and Grid photo views, rotation, retry, and deletion actions
+* Administration / Album Detail pages with a batch upload queue, Detail and Grid photo views, rotation, retry, and deletion actions
 * Multi-file image upload for JPEG, PNG, WebP, GIF, TIFF, AVIF, and HEIF files up to 25 MB each
 * Queue-side duplicate decisions using a three-option pill group: Keep both, Replace, or Skip
 * Background generation of thumbnails and display derivatives; incomplete work resumes at startup and failed work can be retried
@@ -71,7 +71,7 @@ Note: If you've created an image previously (step 4), then you can use it and sk
    new image and stops rather than overwriting an existing `/opt/piframe`.
 
    The developer setup deliberately listens on the local network, so the owner
-   workspace can be opened from another trusted machine at
+   Administration can be opened from another trusted machine at
    `http://<pi-hostname>.local`. PiFrame does not yet authenticate owner
    access, so leave this setting enabled only on a trusted development network.
 
@@ -146,7 +146,7 @@ Graphical autologin ──> piframe-kiosk.desktop ──> piframe-kiosk
 * **`piframe.service`** runs the Node application as user `piframe`. It
   requires and starts after `piframe-wifi-connect.service`, listens on port 80
   on a developer Pi, restarts automatically if the app exits, and serves both
-  the owner workspace and `/display`.
+  Administration and `/display`.
 * **`piframe-kiosk.desktop`** is a user-session autostart entry rather than a
   system service. Graphical autologin starts `/usr/local/sbin/piframe-kiosk`.
   That launcher first opens a local, offline-safe instruction page in
@@ -214,7 +214,7 @@ For automatic restart while editing source files:
 npm run dev:watch
 ```
 
-Open the owner workspace at [http://127.0.0.1:3040](http://127.0.0.1:3040). Open the frame view at [http://127.0.0.1:3040/display](http://127.0.0.1:3040/display).
+Open Administration at [http://127.0.0.1:3040](http://127.0.0.1:3040). Open the frame view at [http://127.0.0.1:3040/display](http://127.0.0.1:3040/display).
 
 Desktop development uses `127.0.0.1`, port `3040`, and the local `./data` directory by default. The Raspberry Pi service uses port `80`, so an owner can open `http://<pi-hostname>.local` without a port suffix. It intentionally does not bind to `0.0.0.0` outside the Pi deployment setup.
 
@@ -326,8 +326,8 @@ The first five high-priority code-review findings have been addressed: streamed 
 ## Current Routes
 
 * `/health`
-* `/` - owner workspace
-* `/admin/folders/:folderId/photos` - album detail
+* `/` - Administration
+* `/admin/folders/:folderId/photos` - Administration / Album Detail
 * `/display` - kiosk slideshow
 * `/api/display/next` - slideshow photo selection API
 * `/media/thumbnail/:photoId.jpg`
