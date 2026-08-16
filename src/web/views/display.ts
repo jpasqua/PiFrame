@@ -22,17 +22,18 @@ export function renderDisplayPage(settings: DisplaySettings, frame: FrameSetting
       main.orientation-90 #display-surface, main.orientation-270 #display-surface { width:min(100vw,calc(100vh * 9 / 16)); height:min(100vh,calc(100vw * 16 / 9)); }
       #stage-host { position:absolute; inset:0; overflow:hidden; background:#000; }
       .stage { position:absolute; inset:0; display:grid; grid-template-columns:1fr; gap:0; background:#000; will-change:opacity,transform; }
-      .stage.portrait-pair { grid-template-columns:repeat(2,minmax(0,1fr)); gap:4px; }
-      .stage.landscape-pair { grid-template-rows:repeat(2,minmax(0,1fr)); gap:4px; }
-      .stage.landscape-side-pair { grid-template-columns:repeat(2,minmax(0,1fr)); gap:4px; }
-      .stage.portrait-triptych { grid-template-columns:repeat(3,minmax(0,1fr)); gap:4px; }
-      .stage.portrait-landscape-trio { grid-template-columns:.37fr .63fr; grid-template-rows:repeat(2,minmax(0,1fr)); gap:4px; }
+      .stage.portrait-pair { grid-template-columns:repeat(2,minmax(0,1fr)); }
+      .stage.landscape-pair { grid-template-rows:repeat(2,minmax(0,1fr)); }
+      .stage.landscape-side-pair { grid-template-columns:repeat(2,minmax(0,1fr)); }
+      .stage.portrait-triptych { grid-template-columns:repeat(3,minmax(0,1fr)); }
+      .stage.portrait-landscape-trio { grid-template-columns:.37fr .63fr; grid-template-rows:repeat(2,minmax(0,1fr)); }
       .stage.portrait-landscape-trio .photo-panel:first-child { grid-row:1 / -1; }
-      .stage.landscape-trio { grid-template-columns:repeat(2,minmax(0,1fr)); grid-template-rows:.78fr 1.22fr; gap:4px; }
+      .stage.landscape-trio { grid-template-columns:repeat(2,minmax(0,1fr)); grid-template-rows:.78fr 1.22fr; }
       .stage.landscape-trio .photo-panel:first-child { grid-column:1 / -1; }
-      .stage.portrait-trio { grid-template-columns:repeat(2,minmax(0,1fr)); grid-template-rows:1.18fr .82fr; gap:4px; }
+      .stage.portrait-trio { grid-template-columns:repeat(2,minmax(0,1fr)); grid-template-rows:1.18fr .82fr; }
       .stage.portrait-trio .photo-panel:last-child { grid-column:1 / -1; }
       .photo-panel { position:relative; min-width:0; min-height:0; margin:0; overflow:hidden; background:#000; }
+      .stage:not(.single) .photo-panel { border:2px solid #fff; }
       .photo-panel::before { content:""; position:absolute; inset:-7%; background:var(--photo-background) center / cover no-repeat; filter:blur(28px); transform:scale(1.08); opacity:.72; }
       img { position:relative; z-index:1; display:block; width:100%; height:100%; min-width:0; object-fit:${presentation}; background:transparent; }
       #empty { position:relative; z-index:1; max-width:850px; padding:7vw; text-align:center; }
@@ -157,18 +158,23 @@ export function renderDisplayPage(settings: DisplaySettings, frame: FrameSetting
           await wait(transitionMs);
           previous.remove();
         } else {
-          if (transitionStyle === "slow-pan") nextStage.style.transform = "scale(.985)";
+          const multiPhotoSlowPan = transitionStyle === "slow-pan" && !nextStage.classList.contains("single");
+          const slowPanTargets = transitionStyle === "slow-pan"
+            ? multiPhotoSlowPan ? [...nextStage.querySelectorAll(".photo-panel img")] : [nextStage]
+            : [];
+          slowPanTargets.forEach((target) => { target.style.transform = "scale(.985)"; });
           stageHost.append(nextStage);
           void nextStage.offsetWidth;
-          const transition = transitionStyle === "slow-pan"
+          const transition = transitionStyle === "slow-pan" && !multiPhotoSlowPan
             ? "opacity " + transitionMs + "ms ease, transform " + transitionMs + "ms ease-out"
             : "opacity " + transitionMs + "ms ease";
           previous.style.transition = "opacity " + transitionMs + "ms ease";
           nextStage.style.transition = transition;
+          if (multiPhotoSlowPan) slowPanTargets.forEach((target) => { target.style.transition = "transform " + transitionMs + "ms ease-out"; });
           requestAnimationFrame(() => {
             previous.style.opacity = "0";
             nextStage.style.opacity = "1";
-            if (transitionStyle === "slow-pan") nextStage.style.transform = "scale(1.02)";
+            slowPanTargets.forEach((target) => { target.style.transform = "scale(1.02)"; });
           });
           await wait(transitionMs);
           previous.remove();
