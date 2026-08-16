@@ -1,5 +1,5 @@
 import { hostname, networkInterfaces } from "node:os";
-import { createDefaultDisplaySettings, createDefaultFrameSettings, createDefaultScheduleSettings, type DisplaySettings, type FrameSettings, type ScheduleSettings } from "../../core/settings.js";
+import { createDefaultDisplaySettings, createDefaultFrameSettings, createDefaultScheduleSettings, normalizeAdministrationTheme, type AdministrationTheme, type DisplaySettings, type FrameSettings, type ScheduleSettings } from "../../core/settings.js";
 import type { AppContext } from "../../data/app-context.js";
 import type { PhotoRecord } from "../../data/photo-repository.js";
 import type { StagedUpload } from "../../services/photo-ingestion.js";
@@ -16,13 +16,37 @@ function renderGeneralSettingsPanel(settings: FrameSettings): string {
     { value: 180, label: "180 degrees", arrow: "↓", shape: "landscape" },
     { value: 270, label: "270 degrees (counter-clockwise)", arrow: "←", shape: "portrait" }
   ];
+  const theme = normalizeAdministrationTheme(settings.theme);
+  const themes: Array<{ value: AdministrationTheme; name: string; description: string }> = [
+    { value: "neutral", name: "Neutral", description: "Slate and Georgia" },
+    { value: "parchment", name: "Parchment", description: "Warm field guide and Inter" },
+    { value: "surf", name: "Surf", description: "Pale water, navy, and Inter" }
+  ];
 
   return `<div class="card"><form method="post" action="/admin/general/save">
     <section class="section"><h3>Frame identity</h3><p class="muted">The frame name is reserved for the Pi hostname when device setup is added. Saving it does not change this computer's hostname.</p><label class="field">Frame name<input type="text" name="frameName" value="${escapeHtml(settings.frameName)}" maxlength="63" pattern="[a-z0-9]+" autocapitalize="none" spellcheck="false" required><small>One lowercase word using letters and numbers.</small></label><label class="field">Frame description<input type="text" name="frameDescription" value="${escapeHtml(settings.frameDescription)}" maxlength="80" placeholder="Living Room"><small>A one-line description, up to 80 characters.</small></label><p class="frame-id">Frame ID <code>${escapeHtml(settings.frameId)}</code></p></section>
     <section class="section"><h3>Location and time</h3><div class="location-field"><div class="location-label">Location <span class="location-info-wrap"><button class="location-info" type="button" aria-label="About location search" aria-describedby="location-search-info">i</button><span id="location-search-info" class="location-tooltip" role="tooltip">Search to choose a matching place. Location lookups via Open-Meteo are requested only when you choose to search.</span></span></div><div class="location-input-row"><input id="frame-location" type="text" name="location" value="${escapeHtml(settings.location)}" maxlength="80" placeholder="City, state, country or postal code"><button id="search-location" class="secondary-action" type="button">Search location</button></div><input id="weather-latitude" type="hidden" name="weatherLatitude" value="${settings.weatherLocation?.latitude ?? ""}"><input id="weather-longitude" type="hidden" name="weatherLongitude" value="${settings.weatherLocation?.longitude ?? ""}"></div><p id="location-lookup-status" class="muted location-status" aria-live="polite"></p><div id="location-search-results" class="location-results" hidden></div><details class="advanced-location"><summary>Advanced location settings</summary><div class="advanced-location-fields"><label class="field">Time zone<input id="frame-time-zone" type="text" name="timeZone" value="${escapeHtml(settings.timeZone)}" list="time-zone-options" required><small>Used for scheduling and the clock.</small></label><datalist id="time-zone-options">${timeZones}</datalist><label class="field">Language<select name="language"><option value="en-US"${settings.language === "en-US" ? " selected" : ""}>English (United States)</option></select><small>More interface languages will be available when PiFrame is translated.</small></label></div></details></section>
     <section class="section"><h3>Physical display</h3><fieldset class="orientation-choices"><legend>Display orientation</legend><div class="orientation-options">${orientationOptions.map(({ value, label, arrow, shape }) => `<label class="orientation-choice" title="${label}"><input type="radio" name="displayOrientation" value="${value.toString()}"${settings.displayOrientation === value ? " checked" : ""}><span class="orientation-screen ${shape}" aria-hidden="true">${arrow}</span><span class="sr-only">${label}</span></label>`).join("")}</div></fieldset></section>
+    <section class="section"><h3>Administration appearance</h3><p class="muted">Choose the colors and type used while managing this frame. This does not affect the displayed photos or setup pages.</p><fieldset class="theme-choices"><legend>Theme</legend><div class="theme-options">${themes.map(({ value, name, description }) => `<label class="theme-choice"><input type="radio" name="theme" value="${value}"${theme === value ? " checked" : ""}><span class="theme-preview" data-theme-preview="${value}" aria-hidden="true"><i></i><b></b><em></em></span><span><strong>${name}</strong><small>${description}</small></span></label>`).join("")}</div><small>Selections preview immediately and are saved with the frame settings.</small></fieldset></section>
     <button class="save" type="submit">Save frame settings</button>
   </form><script src="/assets/app/general-location.js" defer></script></div>`;
+}
+
+function administrationTheme(context: AppContext): AdministrationTheme {
+  const frame = context.settings.getJson<FrameSettings>("frame") ?? createDefaultFrameSettings();
+  return normalizeAdministrationTheme(frame.theme);
+}
+
+function administrationThemeColor(theme: AdministrationTheme): string {
+  switch (theme) {
+    case "parchment": return "#fbf8f0";
+    case "surf": return "#eef9f7";
+    case "neutral": return "#fafafa";
+  }
+}
+
+function renderAdministrationThemeMetadata(theme: AdministrationTheme): string {
+  return `<meta name="theme-color" content="${administrationThemeColor(theme)}">`;
 }
 
 function systemNetworkIdentity(): { hostname: string; address: string | null } {
@@ -57,6 +81,7 @@ export function renderSettingsPage(context: AppContext, flash: FlashMessage, req
   };
   const display = context.settings.getJson<DisplaySettings>("display") ?? createDefaultDisplaySettings();
   const frame = context.settings.getJson<FrameSettings>("frame") ?? createDefaultFrameSettings();
+  const theme = normalizeAdministrationTheme(frame.theme);
   const schedule = context.settings.getJson<ScheduleSettings>("schedule") ?? createDefaultScheduleSettings();
   const folders = context.folders.list();
   const stats = context.photos.stats();
@@ -72,7 +97,7 @@ export function renderSettingsPage(context: AppContext, flash: FlashMessage, req
     ? `<p class="muted">No recent activity.</p>`
     : `<ul class="event-list">${events.map((event) => `<li><strong>${escapeHtml(event.level.toUpperCase())}</strong><span>${escapeHtml(event.message)}</span><time>${escapeHtml(formatTimestamp(event.createdAt))}</time></li>`).join("")}</ul>`;
   const systemActionControls = context.config.platform === "raspberry-pi"
-    ? `<section class="card system-actions" style="margin-top:16px"><h3>Power</h3><p class="muted">These actions affect the entire Pi, including the display and local network connection.</p><div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:16px"><form method="post" action="/admin/system/action" style="display:block"><input type="hidden" name="action" value="restart"><button type="submit" style="border:0;padding:10px 17px;border-radius:5px;color:#fff;background:#59636e;font:inherit;cursor:pointer" onclick="return confirm('Restart this Pi now? The display and local connection will be unavailable briefly.');">Restart Pi</button></form><form method="post" action="/admin/system/action" style="display:block"><input type="hidden" name="action" value="shutdown"><button type="submit" style="border:0;padding:10px 17px;border-radius:5px;color:#fff;background:#af4844;font:inherit;cursor:pointer" onclick="return confirm('Shut down this Pi now? Wait for the display to go dark before removing power.');">Shut down Pi</button></form></div></section>`
+    ? `<section class="card system-actions" style="margin-top:16px"><h3>Power</h3><p class="muted">These actions affect the entire Pi, including the display and local network connection.</p><div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:16px"><form method="post" action="/admin/system/action" style="display:block"><input type="hidden" name="action" value="restart"><button class="system-restart" type="submit" style="border:0;padding:10px 17px;border-radius:5px;color:#fff;font:inherit;cursor:pointer" onclick="return confirm('Restart this Pi now? The display and local connection will be unavailable briefly.');">Restart Pi</button></form><form method="post" action="/admin/system/action" style="display:block"><input type="hidden" name="action" value="shutdown"><button class="system-shutdown" type="submit" style="border:0;padding:10px 17px;border-radius:5px;color:#fff;font:inherit;cursor:pointer" onclick="return confirm('Shut down this Pi now? Wait for the display to go dark before removing power.');">Shut down Pi</button></form></div></section>`
     : "";
   const systemDetails = renderDetailRows([
     ["Platform", escapeHtml(context.config.platform)],
@@ -88,14 +113,16 @@ export function renderSettingsPage(context: AppContext, flash: FlashMessage, req
   const helpContents = `<nav id="help-toc" class="help-toc" aria-label="Help contents"${activeSection === "help" ? "" : " hidden"}><a href="#overview" data-help-section="overview">Overview</a><a href="#first-connection" data-help-section="first-connection">First connection</a><a href="#start" data-help-section="start">Quick start</a><a href="#views" data-help-section="views">Views and controls</a><a href="#care" data-help-section="care">Everyday care</a></nav>`;
 
   return `<!doctype html>
-<html lang="en">
+<html lang="en" data-theme="${theme}">
   <head>
-    <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Settings - PiFrame</title>
+    <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">${renderAdministrationThemeMetadata(theme)}<title>Settings - PiFrame</title>
     <link rel="stylesheet" href="/assets/app/workspace.css">
     <link rel="stylesheet" href="/assets/app/general-location.css">
     <link rel="stylesheet" href="/assets/app/clock-settings.css">
+    <link rel="stylesheet" href="/assets/app/themes.css">
     <link rel="stylesheet" href="/assets/app/brand-colors.css">
     <link rel="stylesheet" href="/assets/app/help/manual.css">
+    <style>html, body { margin: 0; padding: 0; } .content { padding-top: 0; }</style>
     <meta name="presentation-folder-order" content="${escapeHtml(JSON.stringify(display.selectedFolderIds))}">
     <meta name="presentation-order-mode" content="${escapeHtml(display.orderMode)}">
   </head>
@@ -120,6 +147,10 @@ export function renderSettingsPage(context: AppContext, flash: FlashMessage, req
       helpToc?.querySelectorAll("[data-help-section]").forEach((link) => link.addEventListener("click", (event) => { event.preventDefault(); const target = helpContent?.querySelector("#" + link.dataset.helpSection); target?.scrollIntoView({ behavior: "smooth", block: "start" }); }));
       function syncFolders() { if (!allFolders || !folderChoices) return; folderChoices.style.opacity = allFolders.checked ? ".5" : "1"; folderChoices.querySelectorAll("input").forEach((input) => input.disabled = allFolders.checked); } if (allFolders) { allFolders.addEventListener("change", syncFolders); syncFolders(); }
       document.querySelectorAll(".piframe-logo").forEach((logo) => logo.addEventListener("click", (event) => { event.preventDefault(); about.showModal(); })); document.querySelector("#about-close").addEventListener("click", () => about.close()); if (new URLSearchParams(location.search).has("about")) about.showModal();
+    </script>
+    <script>
+      const themeColors = { neutral: "#fafafa", parchment: "#fbf8f0", surf: "#eef9f7" };
+      document.querySelectorAll('input[name="theme"]').forEach((input) => input.addEventListener("change", () => { if (input.checked) { document.documentElement.dataset.theme = input.value; document.querySelector('meta[name="theme-color"]')?.setAttribute("content", themeColors[input.value]); } }));
     </script>
     <script>
       (() => {
@@ -224,6 +255,7 @@ export function renderSettingsPage(context: AppContext, flash: FlashMessage, req
 }
 
 export function renderFoldersPage(context: AppContext, flash: FlashMessage): string {
+  const theme = administrationTheme(context);
   const folders = context.folders.list();
   const folderRows = folders.length === 0
     ? `<tr><td colspan="4" class="empty">No albums yet. Create the first one below.</td></tr>`
@@ -249,12 +281,14 @@ export function renderFoldersPage(context: AppContext, flash: FlashMessage): str
         .join("\n");
 
   return `<!doctype html>
-<html lang="en">
+<html lang="en" data-theme="${theme}">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>PiFrame Admin</title>
+    <title>PiFrame Admin</title>${renderAdministrationThemeMetadata(theme)}
     <link rel="stylesheet" href="/assets/app/albums.css">
+    <link rel="stylesheet" href="/assets/app/themes.css">
+    <link rel="stylesheet" href="/assets/app/brand-colors.css">
   </head>
   <body>
     <main class="shell">
@@ -322,6 +356,7 @@ export function renderFoldersPage(context: AppContext, flash: FlashMessage): str
 }
 
 export function renderFolderPhotosPage(context: AppContext, folderId: string, flash: FlashMessage): string {
+  const theme = administrationTheme(context);
   const folder = context.folders.get(folderId);
   if (!folder) {
     return renderNotFoundPage("/admin/folders");
@@ -347,12 +382,13 @@ export function renderFolderPhotosPage(context: AppContext, folderId: string, fl
     : `<div class="photo-grid" data-folder-id="${escapeHtml(folder.id)}">${photos.map((photo) => `<article class="photo-tile" data-photo-id="${escapeHtml(photo.id)}" data-photo-name="${escapeHtml(photo.originalFilename)}" data-photo-created-at="${escapeHtml(photo.createdAt)}">${photo.processingStatus === "ready" ? `<button class="photo-preview-trigger" type="button" data-photo-preview-src="/media/display/${photo.id}.jpg?v=${encodeURIComponent(photo.updatedAt)}" data-photo-preview-alt="${escapeHtml(photo.originalFilename)}" aria-label="View ${escapeHtml(photo.originalFilename)} larger"><img src="/media/thumbnail/${photo.id}.jpg?v=${encodeURIComponent(photo.updatedAt)}" alt=""></button>` : `<div class="photo-placeholder">${escapeHtml(photo.processingStatus)}</div>`}<p title="${escapeHtml(photo.originalFilename)}">${escapeHtml(photo.originalFilename)}</p></article>`).join("")}</div>`;
 
   return `<!doctype html>
-<html lang="en">
+<html lang="en" data-theme="${theme}">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>${escapeHtml(folder.name)} photos - PiFrame</title>
+    <title>${escapeHtml(folder.name)} photos - PiFrame</title>${renderAdministrationThemeMetadata(theme)}
     <link rel="stylesheet" href="/assets/app/album.css">
+    <link rel="stylesheet" href="/assets/app/themes.css">
     <link rel="stylesheet" href="/assets/app/brand-colors.css">
   </head>
   <body><main>
@@ -372,6 +408,7 @@ export function renderFolderPhotosPage(context: AppContext, folderId: string, fl
 }
 
 export function renderDisplaySettingsPage(context: AppContext, flash: FlashMessage): string {
+  const theme = administrationTheme(context);
   const settings = context.settings.getJson<DisplaySettings>("display") ?? createDefaultDisplaySettings();
   const folders = context.folders.list();
   const useAllFolders = settings.selectedFolderIds.length === 0;
@@ -396,12 +433,13 @@ export function renderDisplaySettingsPage(context: AppContext, flash: FlashMessa
   }).join("");
 
   return `<!doctype html>
-<html lang="en">
+<html lang="en" data-theme="${theme}">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Display Settings - PiFrame</title>
+    <title>Display Settings - PiFrame</title>${renderAdministrationThemeMetadata(theme)}
     <link rel="stylesheet" href="/assets/app/display-settings.css">
+    <link rel="stylesheet" href="/assets/app/themes.css">
     <link rel="stylesheet" href="/assets/app/brand-colors.css">
   </head>
   <body><main>
@@ -429,14 +467,16 @@ export function renderDisplaySettingsPage(context: AppContext, flash: FlashMessa
 }
 
 export function renderScheduleSettingsPage(context: AppContext, flash: FlashMessage): string {
+  const theme = administrationTheme(context);
   const settings = context.settings.getJson<ScheduleSettings>("schedule") ?? createDefaultScheduleSettings();
   return `<!doctype html>
-<html lang="en">
+<html lang="en" data-theme="${theme}">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Schedule - PiFrame</title>
+    <title>Schedule - PiFrame</title>${renderAdministrationThemeMetadata(theme)}
     <link rel="stylesheet" href="/assets/app/schedule-settings.css">
+    <link rel="stylesheet" href="/assets/app/themes.css">
     <link rel="stylesheet" href="/assets/app/brand-colors.css">
   </head>
   <body><main>
@@ -452,11 +492,13 @@ export function renderScheduleSettingsPage(context: AppContext, flash: FlashMess
 </html>`;
 }
 
-export function renderUploadConflictPage(folderId: string, folderName: string, staged: StagedUpload, existingFilename: string): string {
+export function renderUploadConflictPage(context: AppContext, folderId: string, folderName: string, staged: StagedUpload, existingFilename: string): string {
+  const theme = administrationTheme(context);
   return `<!doctype html>
-<html lang="en">
-  <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Resolve filename conflict - PiFrame</title>
+<html lang="en" data-theme="${theme}">
+  <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">${renderAdministrationThemeMetadata(theme)}<title>Resolve filename conflict - PiFrame</title>
     <link rel="stylesheet" href="/assets/app/upload-conflict.css">
+    <link rel="stylesheet" href="/assets/app/themes.css">
     <link rel="stylesheet" href="/assets/app/brand-colors.css">
   </head>
   <body><main>${renderLogo(142)}<section class="panel"><p>PiFrame Administration / ${escapeHtml(folderName)}</p><h1>Filename conflict</h1>
@@ -472,6 +514,7 @@ export function renderUploadConflictPage(folderId: string, folderName: string, s
 }
 
 export function renderStatusPage(context: AppContext): string {
+  const theme = administrationTheme(context);
   const folders = context.folders.list();
   const displaySettings = context.settings.getJson("display") ?? createDefaultDisplaySettings();
   const scheduleSettings = context.settings.getJson("schedule") ?? createDefaultScheduleSettings();
@@ -491,12 +534,14 @@ export function renderStatusPage(context: AppContext): string {
         .join("\n");
 
   return `<!doctype html>
-<html lang="en">
+<html lang="en" data-theme="${theme}">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>PiFrame Status</title>
+    <title>PiFrame Status</title>${renderAdministrationThemeMetadata(theme)}
     <link rel="stylesheet" href="/assets/app/status.css">
+    <link rel="stylesheet" href="/assets/app/themes.css">
+    <link rel="stylesheet" href="/assets/app/brand-colors.css">
   </head>
   <body>
     <main>

@@ -2,6 +2,7 @@ import type { IncomingMessage, ServerResponse } from "node:http";
 import {
   createDefaultDisplaySettings,
   createDefaultFrameSettings,
+  normalizeAdministrationTheme,
   type DisplaySettings,
   type FrameSettings,
   type ScheduleSettings
@@ -26,6 +27,7 @@ export async function handleSettingsActions(context: AppContext, systemActions: 
         ...unchanged,
         frameName: parseFrameName(form.frameName),
         frameDescription: parseSingleLine(form.frameDescription, "Frame description", 80),
+        theme: normalizeAdministrationTheme(form.theme),
         location: parseSingleLine(form.location, "Location", 80),
         ...(weatherLocation ? { weatherLocation } : {}),
         timeZone: parseTimeZone(form.timeZone),
@@ -35,6 +37,7 @@ export async function handleSettingsActions(context: AppContext, systemActions: 
       context.settings.putJson("frame", settings);
       context.events.record("info", "frame.settings_saved", "Frame settings saved.", {
         frameName: settings.frameName,
+        theme: settings.theme,
         timeZone: settings.timeZone,
         displayOrientation: settings.displayOrientation
       });

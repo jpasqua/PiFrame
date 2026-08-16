@@ -32,11 +32,18 @@ export interface ScheduleSettings {
   overrideState: "follow-schedule" | "force-on" | "force-off";
 }
 
+export type AdministrationTheme = "neutral" | "parchment" | "surf";
+
+export function normalizeAdministrationTheme(value: unknown): AdministrationTheme {
+  return value === "neutral" || value === "parchment" || value === "surf" ? value : "surf";
+}
+
 export function createDefaultFrameSettings(): FrameSettings {
   return {
     frameId: randomUUID(),
     frameName: "piframe",
     frameDescription: "",
+    theme: "surf",
     location: "",
     timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC",
     language: "en-US",
@@ -79,6 +86,7 @@ export interface FrameSettings {
   frameId: string;
   frameName: string;
   frameDescription: string;
+  theme: AdministrationTheme;
   location: string;
   weatherLocation?: WeatherLocation;
   timeZone: string;

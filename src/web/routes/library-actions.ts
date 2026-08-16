@@ -206,7 +206,7 @@ export async function handleLibraryActions(context: AppContext, ingestion: Photo
               return redirect(res, `${folderPhotosPath(folderId)}?success=${encodeURIComponent(`Saved “${photo.originalFilename}”.`)}`);
             }
             if (wantsJson) return sendJson(res, 409, { status: "conflict", folderId: folder.id, tempBasename: staged.tempBasename, originalFilename: staged.originalFilename, existingFilename: conflict.originalFilename });
-            return sendHtml(res, 200, renderUploadConflictPage(folder.id, folder.name, staged, conflict.originalFilename));
+            return sendHtml(res, 200, renderUploadConflictPage(context, folder.id, folder.name, staged, conflict.originalFilename));
           }
           const photo = await ingestion.commit(folderId, staged, "keep-both");
           context.processor.enqueue(photo.id);

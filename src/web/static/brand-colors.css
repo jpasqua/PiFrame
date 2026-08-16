@@ -1,29 +1,66 @@
-:root {
-  --accent: #d89249;
-  --accent-hover: #98562c;
-  --accent-ink: #332012;
-  --accent-pale: #e3a75e;
-  --accent-soft: #fff4e4;
-  --success: #157b6d;
-  --success-bg: #e4f4f2;
-}
+html { background-color: var(--browser-chrome-color); background-image: var(--page-background); color-scheme: light; }
+body { background-color: var(--browser-chrome-color); background-image: var(--page-background); }
+/* Safari 26 uses a fixed, solid top color as the source for its browser-chrome tint. */
+body::before { content: ""; position: fixed; z-index: 0; top: 0; left: 0; width: 100%; height: 6px; background-color: var(--browser-chrome-color); pointer-events: none; }
+main { position: relative; z-index: 1; padding: 18px; gap: 18px; }
+aside { padding-top: 14px; background: var(--rail); border: 1px solid var(--line); border-radius: 16px; box-shadow: 0 8px 20px rgba(43, 49, 58, .05); }
+body, button, input, select, textarea { font-family: var(--font-family); }
+.content { padding-top: 0; }
+.location-info, .location-tooltip { font-family: var(--font-family); }
 
-/* Warm gold and brown accents keep the logo palette distinct from errors. */
 button { color: var(--accent-ink); }
+nav button:focus { outline: 3px solid var(--accent); outline-offset: 3px; }
 button.save, .album-create .album-action, .upload-form button:not(.clear-queue-button), .upload-choice button.selected { color: var(--accent-ink); }
-.mark { box-shadow: inset 0 0 0 5px var(--accent-pale); }
+input[type=text], input[type=number], input[type=time], input[type=file], select,
+.upload-choice { border-color: var(--field-border); background: var(--paper); }
+.orientation-screen { border-color: var(--field-border); background: var(--paper); }
+.stat, .clear-queue-button { background: var(--surface-muted) !important; }
+.album-action, .upload-choice button, .view-switch { background: var(--surface-muted); }
+.album-action:disabled, .batch-upload-button:disabled, .clear-queue-button:disabled { color: var(--muted); background: var(--surface-subtle) !important; }
+.dashboard-lead { background: linear-gradient(135deg, var(--hero-from), var(--hero-to)); }
+.dashboard-actions a { color: var(--accent-hover); }
+.system-restart { background: var(--accent) !important; }
+.system-shutdown { background: var(--error) !important; }
+.photo-tile, .photo-preview-trigger img, .photo-name img { background: var(--surface-muted); }
+.photo-actions button { color: var(--muted); }
+.photo-actions button:hover, .photo-actions button:focus-visible { color: var(--accent-hover); }
+.view-switch, .upload-choice button:hover { background: var(--surface-muted); }
+.view-switch button.active { color: var(--accent-hover); background: var(--paper); }
+.photo-preview-close { color: var(--paper); background: var(--accent-hover); }
+.mark { box-shadow: inset 0 0 0 5px var(--accent-soft); }
 nav button.active, nav button:hover { background: var(--accent-soft); }
-.orientation-choice:hover .orientation-screen { border-color: var(--accent-pale); background: #fff8ed; }
-.orientation-choice input:checked + .orientation-screen { background: var(--accent-soft); box-shadow: 0 0 0 3px rgba(216, 146, 73, .16); }
-.orientation-choice input:focus-visible + .orientation-screen { outline-color: rgba(216, 146, 73, .38); }
+.orientation-choice:hover .orientation-screen { border-color: var(--accent-pale); background: var(--surface-subtle); }
+.orientation-choice input:checked + .orientation-screen { background: var(--accent-soft); box-shadow: 0 0 0 3px var(--accent-ring); }
+.orientation-choice input:focus-visible + .orientation-screen { outline-color: var(--accent-ring); }
+.theme-choices { max-width:760px; padding:0; margin:0; border:0; }
+.theme-choices legend { margin-bottom:9px; font-weight:700; }
+.theme-options { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; }
+.theme-choice { position:relative; display:grid; gap:9px; padding:11px; border:1px solid var(--line); border-radius:8px; cursor:pointer; }
+.theme-choice input { position:absolute; inline-size:1px; block-size:1px; opacity:0; }
+.theme-choice:has(input:checked) { border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-ring); }
+.theme-choice:has(input:focus-visible) { outline:3px solid var(--accent); outline-offset:3px; }
+.theme-choice strong,.theme-choice small { display:block; }
+.theme-choice small { margin-top:2px; }
+.theme-preview { display:flex; height:42px; overflow:hidden; border:1px solid rgba(0,0,0,.12); border-radius:5px; background:#f3f4f5; }
+.theme-preview i { flex:0 0 27%; background:#fff; }
+.theme-preview b { flex:1; background:#58636e; }
+.theme-preview em { flex:0 0 20%; background:#e9edf0; }
+.theme-preview[data-theme-preview="parchment"] { background:#f4f0e6; }
+.theme-preview[data-theme-preview="parchment"] i { background:#fffdf7; }
+.theme-preview[data-theme-preview="parchment"] b { background:#8d5a09; }
+.theme-preview[data-theme-preview="parchment"] em { background:#f3ebdc; }
+.theme-preview[data-theme-preview="surf"] { background:#f2f8f8; }
+.theme-preview[data-theme-preview="surf"] i { background:#fff; }
+.theme-preview[data-theme-preview="surf"] b { background:#0f4258; }
+.theme-preview[data-theme-preview="surf"] em { background:#e7f1f1; }
 .album-name:hover { color: var(--accent-hover); }
 
 nav a:hover { background: var(--accent-soft); }
-nav a.album-nested { color: var(--accent-hover); background: #fff4e4; border-left-color: var(--accent-pale); }
+nav a.album-nested { color: var(--accent-hover); background: var(--accent-soft); border-left-color: var(--accent-pale); }
 nav a.album-nested small { color: var(--accent-hover); }
 .photo-actions button:hover, .photo-actions button:focus-visible { background: var(--accent-soft); }
 .secondary-action:hover { background: var(--accent-soft); }
-.location-result:hover { border-color: var(--accent-pale); background: #fff8ed; }
+.location-result:hover { border-color: var(--accent-pale); background: var(--surface-subtle); }
 
 .help-toc { margin:4px 0 0 15px; padding:6px 0 6px 10px; border-left:1px solid var(--accent-pale); gap:0; }
 .help-toc[hidden] { display:none; }
@@ -33,5 +70,8 @@ nav a.album-nested small { color: var(--accent-hover); }
 .help-panel { margin:0; height:auto; min-height:0; }
 
 @media (max-width:720px) {
+  main { padding: 12px; gap: 12px; }
+  aside { border-radius: 12px; }
   .help-toc { grid-template-columns:1fr; overflow:visible; }
+  .theme-options { grid-template-columns:1fr; }
 }

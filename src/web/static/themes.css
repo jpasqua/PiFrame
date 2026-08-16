@@ -1,0 +1,95 @@
+/*
+ * Palette definitions. The Administration theme selector sets data-theme on
+ * <html> without changing component CSS.
+ */
+:root {
+  --font-family: Georgia, "Times New Roman", serif;
+  --page-background: linear-gradient(180deg, #fafafa 0%, #f3f4f5 100%);
+  --browser-chrome-color: #fafafa;
+  --bg: #f3f4f5;
+  --rail: #fbfbfc;
+  --paper: #ffffff;
+  --panel: #ffffff;
+  --ink: #3f464e;
+  --muted: #737b85;
+  --line: #d7dbe0;
+  --field-border: #c8cdd3;
+  --surface-muted: #f3f5f6;
+  --surface-subtle: #f8f9fa;
+  --accent: #58636e;
+  --accent-hover: #414b54;
+  --accent-ink: #ffffff;
+  --accent-pale: #c7cdd2;
+  --accent-soft: #e9edf0;
+  --accent-ring: rgba(88, 99, 110, .22);
+  --hero-from: #505a64;
+  --hero-to: #6a737c;
+  --success: #187567;
+  --success-bg: #e5f2ef;
+  --warning: #9a691f;
+  --warning-bg: #f8f0e3;
+  --error: #aa4d4a;
+  --error-bg: #f8e9e8;
+}
+
+/* Inspired by spotwildlife.org: parchment, field-brown, and ochre. */
+[data-theme="parchment"] {
+  --font-family: Inter, "Segoe UI", Arial, sans-serif;
+  --page-background: radial-gradient(circle at 15% 0%, #fbf8f0 0%, #f4f0e6 35%, #f0e8d7 100%);
+  --browser-chrome-color: #fbf8f0;
+  --bg: #f5f1e8;
+  --rail: #fbf7f0;
+  --paper: #fffdf8;
+  --panel: #fffdf8;
+  --ink: #2c2418;
+  --muted: #756b5d;
+  --line: #dfd5c4;
+  --field-border: #cfc2ae;
+  --surface-muted: #f2eadc;
+  --surface-subtle: #faf6ee;
+  --accent: #8d5a09;
+  --accent-hover: #684207;
+  --accent-ink: #ffffff;
+  --accent-pale: #d8bd84;
+  --accent-soft: #f2e5c9;
+  --accent-ring: rgba(141, 90, 9, .22);
+  --hero-from: #5d4c38;
+  --hero-to: #75624a;
+  --success: #3e6d4d;
+  --success-bg: #e6f0e8;
+  --warning: #8d5a09;
+  --warning-bg: #f8edd7;
+  --error: #9e4d3f;
+  --error-bg: #f8e9e4;
+}
+
+/* Inspired by surfexams.net: pale water, deep navy, and seafoam. */
+[data-theme="surf"] {
+  --font-family: Inter, "Segoe UI", Arial, sans-serif;
+  --page-background: radial-gradient(circle at 15% 0%, #eef9f7 0%, #f2f8f8 35%, #f2f8f8 100%);
+  --browser-chrome-color: #eef9f7;
+  --bg: #f2f8f8;
+  --rail: #ffffff;
+  --paper: #ffffff;
+  --panel: #ffffff;
+  --ink: #102733;
+  --muted: #496370;
+  --line: #d1e1e2;
+  --field-border: #b8d6da;
+  --surface-muted: #e7f1f1;
+  --surface-subtle: #f7fbfb;
+  --accent: #0f4258;
+  --accent-hover: #0a3142;
+  --accent-ink: #ffffff;
+  --accent-pale: #9bb9be;
+  --accent-soft: #d6f1ed;
+  --accent-ring: rgba(15, 66, 88, .22);
+  --hero-from: #0f4258;
+  --hero-to: #0a3142;
+  --success: #09433c;
+  --success-bg: #d6f1ed;
+  --warning: #d28b1a;
+  --warning-bg: #fff3dc;
+  --error: #a84d49;
+  --error-bg: #f9e9e7;
+}
