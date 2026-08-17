@@ -2,6 +2,31 @@
 
 PiFrame is a local-first digital picture frame built with Node.js, TypeScript, SQLite, and Sharp. It runs as a lightweight local web application: Administration manages albums and display settings, while `/display` is the Chromium-kiosk-friendly slideshow view.
 
+## Contents
+
+- [Current Features](#current-features)
+- [Requirements](#requirements)
+- [Install](#install)
+  - [Raspberry Pi developer setup](#raspberry-pi-developer-setup)
+  - [Wi-Fi setup and recovery](#wi-fi-setup-and-recovery)
+  - [Pi services and launch sequence](#pi-services-and-launch-sequence)
+    - [Developer portal tests](#developer-portal-tests)
+  - [Update an installed PiFrame](#update-an-installed-piframe)
+- [Build, Run, and Test](#build-run-and-test)
+  - [Development](#development)
+  - [Production Build](#production-build)
+  - [Verification](#verification)
+- [Location Lookup](#location-lookup)
+- [Storage and Processing](#storage-and-processing)
+- [Raspberry Pi runtime notes](#raspberry-pi-runtime-notes)
+- [Project Layout](#project-layout)
+- [Tasks](#tasks)
+- [Current Routes](#current-routes)
+- [Raspberry Pi SD Card: Backup & Restore Guide (Mac)](#raspberry-pi-sd-card-backup--restore-guide-mac)
+  - [Part 1: Creating a Compressed Backup (Terminal)](#part-1-creating-a-compressed-backup-terminal)
+  - [Part 2: Restoring the Backup (Raspberry Pi Imager)](#part-2-restoring-the-backup-raspberry-pi-imager)
+- [A Few Words about Security](#a-few-words-about-security)
+
 ## Current Features
 
 * SQLite-backed albums and managed photo storage
@@ -378,7 +403,7 @@ sudo dd if=/dev/rdiskN of=~/Desktop/piframe_backup.img bs=1m
 ### Step 4: Maximize Space Savings (Compression)
 Because `dd` copies every single byte—including blank space—the resulting `.img` file will be massive. Run this command to compress it into a much smaller archive:
 ```bash
-gzip -9 ~/Desktop/pi_backup.img
+gzip -9 ~/Desktop/piframe_backup.img
 ```
 This leaves you with a compact `piframe_backup.img.gz` file on your Desktop and automatically cleans up the large, uncompressed original.
 
@@ -393,3 +418,11 @@ When you need to restore your backup to a new or formatted SD card, use the offi
 3. **Select your backup file** (`piframe_backup.img.gz`) from your Desktop. *(There is no need to extract it first; the Imager handles compressed files directly).*
 4. Click **Choose Storage** and select your target SD card.
 5. Click **Write** and confirm the prompt to begin flashing the drive.
+
+## A Few Words about Security
+
+PiFrame is a single-owner appliance intended to run on a trusted private network, not a multi-user or internet-facing service. Its security model reflects that: PiFrame does not implement application-level authentication, authorization, or user accounts. Access to the device is governed by who can reach it — physically, by being in the room, and on the network, by being on the same private LAN. This mirrors the approach taken by [MagicMirror²](https://magicmirror.builders), which is a similar but more advanced project. It also ships with no login system or session management and treats network/physical placement as the access boundary.
+
+This is a deliberate choice rather than an oversight. Take this into account when choosing whether to use PiFrame. As with [MagicMirror²](https://magicmirror.builders), any third-party integrations PiFrame connects to (none at the moment) authenticate *outward* using their own credentials or API keys, stored in local configuration; these protect the upstream account, not access to PiFrame itself.
+
+Because of this model, PiFrame should not be exposed to the public internet or to networks shared with untrusted devices. If remote access or a less-trusted network is ever required, the recommended path is to add a boundary in front of the app rather than inside it — for example, a reverse proxy with HTTP Basic Auth over TLS, or a WireGuard/Tailscale tunnel — rather than building authentication into PiFrame itself.
