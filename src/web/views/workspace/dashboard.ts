@@ -1,0 +1,13 @@
+import type { DisplaySettings } from "../../../core/settings.js";
+import type { PhotoStats } from "../../../data/photo-repository.js";
+
+export function renderDashboardPanel(active: boolean, display: DisplaySettings, stats: PhotoStats, displayOn: boolean): string {
+  const message = displayOn ? `${stats.ready} ready photo${stats.ready === 1 ? "" : "s"} are available for display.` : "The schedule or an override has set the display to black.";
+  return `<section class="panel" data-panel="dashboard"${active ? "" : " hidden"}>
+  <div class="dashboard-grid">
+    <section class="card dashboard-lead"><p>${displayOn ? "Displaying now" : "Display is off"}</p><h3>${displayOn ? stats.ready > 0 ? "Your frame is on." : "Waiting for photos." : "Resting quietly."}</h3><p>${message}</p><div class="dashboard-actions"><a href="/display">Open frame</a><a class="secondary" href="/?view=folders">Manage albums</a></div></section>
+    <section class="card"><h3>Frame setup</h3><dl class="frame-setup"><div><dt>Source:</dt><dd>${display.selectedFolderIds.length === 0 ? "All albums" : `${display.selectedFolderIds.length} selected`}</dd></div><div><dt>Layout:</dt><dd>${display.screenLayout === "single" ? "One photo" : "Adaptive"}</dd></div><div><dt>Change every:</dt><dd>${display.photoDurationSeconds} seconds</dd></div><div><dt>Schedule:</dt><dd>${displayOn ? "On" : "Off"}</dd></div></dl></section>
+  </div>
+  <section class="card" style="margin-top:16px"><h3>Library health</h3><div class="stats"><div class="stat"><strong>${stats.total}</strong><span>Photos</span></div><div class="stat"><strong>${stats.ready}</strong><span>Ready</span></div><div class="stat"><strong>${stats.pending + stats.processing + stats.failed}</strong><span>Need attention</span></div></div></section>
+</section>`;
+}

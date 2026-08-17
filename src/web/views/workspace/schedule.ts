@@ -1,0 +1,9 @@
+import type { ScheduleSettings } from "../../../core/settings.js";
+import { escapeHtml } from "../shared.js";
+
+export function renderSchedulePanel(active: boolean, schedule: ScheduleSettings): string {
+  return `<section class="panel" data-panel="schedule"${active ? "" : " hidden"}><div class="card">
+  <form method="post" action="/admin/schedule/save"><section class="section"><h3>Daily display schedule</h3><label><input type="checkbox" name="enabled"${schedule.enabled ? " checked" : ""}> Follow a daily schedule</label><div class="times"><label class="field">Turn on<input type="time" name="dailyOnTime" value="${escapeHtml(schedule.dailyOnTime)}" required></label><label class="field">Turn off<input type="time" name="dailyOffTime" value="${escapeHtml(schedule.dailyOffTime)}" required></label></div></section><button class="save" type="submit" disabled>Save changes</button></form>
+  <section class="immediate-override"><h3>Frame override</h3><p class="muted">Apply an immediate override without changing the saved daily schedule.</p><div class="immediate-actions"><form method="post" action="/admin/schedule/override" data-schedule-override><input type="hidden" name="overrideState" value="force-on"><button class="override-action" type="submit">Turn on frame now</button></form><form method="post" action="/admin/schedule/override" data-schedule-override><input type="hidden" name="overrideState" value="force-off"><button class="override-action secondary" type="submit">Turn off frame now</button></form></div><p id="schedule-override-status" class="muted" aria-live="polite"></p></section>
+</div></section>`;
+}

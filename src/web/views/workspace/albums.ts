@@ -1,0 +1,12 @@
+import type { FolderRecord } from "../../../data/folder-repository.js";
+import { folderPhotosPath } from "../../urls.js";
+import { escapeHtml } from "../shared.js";
+
+export function renderAlbumsPanel(active: boolean, folders: FolderRecord[]): string {
+  const rows = folders.map((folder) => {
+    const formId = `rename-album-${folder.id}`;
+    const buttonId = `${formId}-submit`;
+    return `<tr><td><a class="album-name" href="${folderPhotosPath(folder.id)}"><span>${escapeHtml(folder.name)}</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13m-5-5 5 5-5 5"/></svg></a></td><td class="album-count">${folder.photoCount} photos</td><td><form id="${formId}" class="album-rename" method="post" action="/admin/folders/rename"><input type="hidden" name="id" value="${escapeHtml(folder.id)}"><input type="text" name="name" value="${escapeHtml(folder.name)}" maxlength="120" aria-label="Rename ${escapeHtml(folder.name)}" oninput="document.getElementById('${buttonId}').disabled = this.value === this.defaultValue" required></form></td><td><button id="${buttonId}" class="album-action" type="submit" form="${formId}" disabled>Rename</button></td><td><form class="album-delete" method="post" action="/admin/folders/delete"><input type="hidden" name="id" value="${escapeHtml(folder.id)}"><button type="submit" aria-label="Delete ${escapeHtml(folder.name)}" title="Delete album" onclick="return confirm('Delete this album and all of its photos?') && confirm('This cannot be undone. Are you absolutely sure you want to delete this entire album?');"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M10 11v6m4-6v6M9 7l1-2h4l1 2m-9 0 1 13h10l1-13"/></svg></button></form></td></tr>`;
+  }).join("");
+  return `<section class="panel" data-panel="folders"${active ? "" : " hidden"}><div class="card"><section><h3>Albums</h3><div class="folder-list"><div class="album-table-wrap"><table class="album-table"><colgroup><col class="album-name-column"><col class="album-count-column"><col><col class="album-action-column"><col class="album-delete-column"></colgroup><tbody>${rows}<tr class="album-create"><td><span class="album-new-name">New Album</span></td><td class="album-count">0 photos</td><td><form id="create-album" method="post" action="/admin/folders/create"><input type="text" name="name" maxlength="120" placeholder="Enter new album name" aria-label="New album name" required></form></td><td><button class="album-action" type="submit" form="create-album">Create</button></td><td></td></tr></tbody></table></div></div></section></div></section>`;
+}
