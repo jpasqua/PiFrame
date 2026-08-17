@@ -2,6 +2,7 @@ import type { IncomingMessage, ServerResponse } from "node:http";
 import {
   createDefaultDisplaySettings,
   createDefaultFrameSettings,
+  createDefaultScheduleSettings,
   normalizeAdministrationTheme,
   type DisplaySettings,
   type FrameSettings,
@@ -11,7 +12,7 @@ import type { AppContext } from "../../data/app-context.js";
 import { type SystemAction, SystemActionService } from "../../services/system-actions.js";
 import { readForm } from "../http/forms.js";
 import { isTrustedOrigin } from "../http/request.js";
-import { redirect, sendHtml, sendPlainText } from "../http/responses.js";
+import { redirect, sendHtml, sendJson, sendPlainText } from "../http/responses.js";
 import { settingsLocation } from "../urls.js";
 import { renderSystemActionPage } from "../views/system.js";
 
@@ -78,6 +79,22 @@ export async function handleSettingsActions(context: AppContext, systemActions: 
       context.events.record("info", "schedule.settings_saved", "Schedule settings saved.", { ...settings });
       redirect(res, settingsLocation("schedule", "success", "Schedule settings saved."));
     } catch (error) { redirect(res, settingsLocation("schedule", "error", error instanceof Error ? error.message : "Could not save schedule settings.")); }
+    return true;
+  }
+
+  if (req.method === "POST" && url.pathname === "/admin/schedule/override") {
+    if (!isTrustedOrigin(req)) { sendPlainText(res, 403, "Forbidden"); return true; }
+    try {
+      const form = await readForm(req);
+      const overrideState = parseEnum(form.overrideState, "force-on", ["force-on", "force-off"]);
+      const current = context.settings.getJson<ScheduleSettings>("schedule") ?? createDefaultScheduleSettings();
+      context.settings.putJson("schedule", { ...current, overrideState });
+      const message = overrideState === "force-on" ? "Frame turned on." : "Frame turned off.";
+      context.events.record("info", "schedule.override_changed", message, { overrideState });
+      sendJson(res, 200, { message });
+    } catch (error) {
+      sendJson(res, 400, { error: error instanceof Error ? error.message : "Could not change the frame override." });
+    }
     return true;
   }
 

@@ -11,6 +11,13 @@ body, button, input, select, textarea { font-family: var(--font-family); }
 button { color: var(--accent-ink); }
 nav button:focus { outline: 3px solid var(--accent); outline-offset: 3px; }
 button.save, .album-create .album-action, .upload-form button:not(.clear-queue-button), .upload-choice button.selected { color: var(--accent-ink); }
+button.save:disabled { color: var(--muted); background: var(--surface-muted); cursor: not-allowed; }
+.immediate-override { margin-top: 22px; padding-top: 22px; border-top: 1px solid var(--line); }
+.immediate-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.immediate-actions form { display: block; }
+.override-action { border: 0; border-radius: 5px; padding: 10px 17px; color: var(--accent-ink); background: var(--accent); font: inherit; cursor: pointer; }
+.override-action.secondary { background: var(--accent-hover); }
+.override-action:disabled { cursor: wait; opacity: .65; }
 input[type=text], input[type=number], input[type=time], input[type=file], select,
 .upload-choice { border-color: var(--field-border); background: var(--paper); }
 .orientation-screen { border-color: var(--field-border); background: var(--paper); }

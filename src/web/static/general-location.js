@@ -27,6 +27,7 @@ if (locationInput && timeZoneInput && weatherLatitudeInput && weatherLongitudeIn
     if (result.timezone) timeZoneInput.value = result.timezone;
     weatherLatitudeInput.value = Number.isFinite(result.latitude) ? String(result.latitude) : "";
     weatherLongitudeInput.value = Number.isFinite(result.longitude) ? String(result.longitude) : "";
+    locationInput.dispatchEvent(new Event("change", { bubbles: true }));
     clearResults();
     setStatus(`Using ${locationInput.value}. Confirm the advanced values if needed, then save General settings.`);
   }

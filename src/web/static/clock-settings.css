@@ -14,5 +14,8 @@
 .weather-toggles label { font-weight:400; }
 .inline-field { display:grid; grid-template-columns:150px minmax(0,220px); align-items:center; gap:10px; max-width:380px; }
 .inline-field input,.inline-field select { width:100%; min-width:0; }
+.identity-fields { display:grid; gap:10px; }
+.identity-field { grid-template-columns:105px minmax(0,220px) max-content; max-width:440px; }
+.identity-field .location-info-wrap { align-self:center; }
 .transition-fields { display:grid; gap:10px; }
 @media (max-width:480px) { .inline-field { grid-template-columns:1fr; gap:5px; } }
