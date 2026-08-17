@@ -20,7 +20,7 @@ fail() {
 
 [[ "$(id -un)" == "$PIFRAME_USER" ]] || fail "Run this script as $PIFRAME_USER, not $(id -un)."
 [[ "$(uname -m)" == "aarch64" ]] || fail "This installer requires 64-bit Raspberry Pi OS (aarch64)."
-[[ ! -e "$PIFRAME_DIRECTORY" ]] || fail "$PIFRAME_DIRECTORY already exists; use /opt/piframe/update-piframe.sh instead."
+[[ ! -e "$PIFRAME_DIRECTORY" ]] || fail "$PIFRAME_DIRECTORY already exists; use /opt/piframe/scripts/update-piframe.sh instead."
 
 for command in curl git tar sha256sum; do
   command -v "$command" >/dev/null || fail "$command is required; install the Raspberry Pi OS prerequisites first."

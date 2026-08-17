@@ -5,16 +5,19 @@ PiFrame is a local-first digital picture frame built with Node.js, TypeScript, S
 ## Current Features
 
 * SQLite-backed albums and managed photo storage
-* Unified Administration interface with Dashboard, Frame, Presentation, Schedule, Albums, and System Status views
-* Frame settings for identity, local description, location, time zone, language, and display orientation
-* Assisted location setup using browser geolocation, place search, automatic time-zone resolution, and an editable advanced settings disclosure
+* Unified Administration interface with Dashboard, Frame, Presentation, Schedule, Albums, System Status, and Help views
+* Frame settings for identity, description, location, time zone, language, physical display orientation, and an Administration theme
+* Three Administration themes: Neutral, Parchment, and Surf
+* Assisted location setup using place search, automatic time-zone resolution, and an editable advanced settings disclosure
 * Album creation, renaming, and two-step deletion that removes contained photos and managed assets
-* Administration / Album Detail pages with a batch upload queue, Detail and Grid photo views, rotation, retry, and deletion actions
+* Administration / Album Detail pages with a batch upload queue, Detail and Grid photo views, larger modal photo previews, rotation, retry, and deletion actions
 * Multi-file image upload for JPEG, PNG, WebP, GIF, TIFF, AVIF, and HEIF files up to 25 MB each
 * Queue-side duplicate decisions using a three-option pill group: Keep both, Replace, or Skip
 * Background generation of thumbnails and display derivatives; incomplete work resumes at startup and failed work can be retried
 * Non-destructive rotation preserved as photo metadata and reflected in regenerated derivatives
-* Full-screen slideshow with album selection, ordering, one- or three-photo layouts, fit/fill sizing, daily schedule, black-screen off mode, and optional clock overlay
+* Full-screen slideshow with album selection, ordering, adaptive one-, two-, or three-photo layouts, fit or Fill and Crop sizing, and slide transitions
+* Optional clock and weather overlays; weather supports current conditions, a five-day forecast, and Imperial or Metric units
+* Daily display schedule with immediate “Turn on frame now” and “Turn off frame now” overrides
 * Local health endpoint, durable system events, and stale upload staging cleanup
 * Pi deployment templates for a loopback-only systemd service and Chromium kiosk autostart
 
@@ -192,7 +195,7 @@ NetworkManager, and starts PiFrame again.
 After changes have been pushed to GitHub, run the included helper on the Pi:
 
 ```bash
-/opt/piframe/update-piframe.sh
+/opt/piframe/scripts/update-piframe.sh
 ```
 
 It shows the working-tree status, fast-forwards from GitHub, installs the
@@ -257,17 +260,18 @@ npm run build
 * Upload several supported images to an album and confirm each reaches `ready`.
 * Add an already-used filename to the queue; select Keep both, Replace, or Skip before uploading.
 * Rotate a ready photo and confirm both its thumbnail and slideshow image update.
-* Toggle the schedule or force-off setting and confirm `/display` becomes black.
-* Save Frame settings, including a location search or browser-location lookup, and confirm the selected time zone persists after reload.
+* Save Presentation settings and confirm the selected albums, layout, image sizing, transition, and overlays take effect on `/display`.
+* Toggle the daily schedule, then use each immediate override and confirm `/display` becomes black or resumes.
+* Save Frame settings, including a location search, and confirm the selected time zone persists after reload.
+* Change the Administration theme in Frame, save it, and confirm it persists after a reload.
 
 ## Location Lookup
 
 Frame settings keeps location editable while providing two optional, user-initiated helpers:
 
-* **Use this device's location** asks the browser for coordinates, resolves a nearby city/region/country, and suggests the matching IANA time zone.
-* **Search location** finds matching places from typed city, region, country, or postal-code text. Select a result before saving.
+* **Search location** finds matching places from typed city, region, country, or postal-code text. Select a result before saving; this stores the coordinates used by the weather overlay and suggests the matching IANA time zone.
 
-No location lookup occurs automatically. Text search and time-zone resolution use [Open-Meteo](https://open-meteo.com/); reverse geocoding uses [Nominatim](https://nominatim.org/) with [OpenStreetMap contributor](https://www.openstreetmap.org/copyright) attribution. Reverse lookups are cached in memory and serialized to respect the public Nominatim service's request limit. Language is currently fixed to English (United States) until the interface is translated.
+No location lookup occurs automatically. Text search and time-zone resolution use [Open-Meteo](https://open-meteo.com/). Language is currently fixed to English (United States) until the interface is translated.
 
 ## Storage and Processing
 
@@ -310,7 +314,8 @@ image uses a different location.
 * `src/data/` owns SQLite migrations and repositories.
 * `src/core/` contains validation and display/schedule defaults.
 * `src/services/` handles ingestion, derivative generation, and recovery work.
-* `src/web/app.ts` is the small top-level route dispatcher; `src/web/routes/`, `src/web/views/`, `src/web/http/`, and `src/web/static/` separate endpoint behavior, rendering, HTTP helpers, and browser assets.
+* `src/web/app.ts` is the small top-level route dispatcher; `src/web/routes/`, `src/web/views/`, `src/web/http/`, and `src/web/static/` separate endpoint behavior, rendering, HTTP helpers, and browser assets. `src/web/views/workspace/` contains the individual Administration-panel renderers and shared page shell.
+* `scripts/` contains installation, Wi-Fi recovery/testing, static-asset copying, and installed-frame update helpers.
 * `docs/technical-design.md` describes the architecture and deployment direction.
 
 ## Tasks
