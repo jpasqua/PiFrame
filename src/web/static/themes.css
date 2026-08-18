@@ -3,6 +3,7 @@
  * <html> without changing component CSS.
  */
 :root {
+  --color-scheme: light;
   --font-family: Georgia, "Times New Roman", serif;
   --page-background: linear-gradient(180deg, #fafafa 0%, #f3f4f5 100%);
   --browser-chrome-color: #fafafa;
@@ -134,4 +135,34 @@
   --accent-pale: #bfaacb; --accent-soft: #eee4f0; --accent-ring: rgba(115, 80, 138, .22);
   --hero-from: #523b47; --hero-to: #73508a;
   --success: #4d7255; --success-bg: #e7f0e5; --warning: #92631a; --warning-bg: #faefd8; --error: #9d4b59; --error-bg: #fae8ec;
+}
+
+/* A Matrix-inspired terminal palette, balanced for daily administration use. */
+[data-theme="signal-rain"] {
+  --color-scheme: dark;
+  --font-family: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  --page-background: radial-gradient(circle at 15% 0%, #101812 0%, #050806 62%);
+  --browser-chrome-color: #050806;
+  --bg: #050806; --rail: #0a0f0b; --paper: #101812; --panel: #101812;
+  --ink: #d8fbe2; --muted: #85a98e; --line: #2b4832; --field-border: #42664b;
+  --surface-muted: #17221a; --surface-subtle: #0d140f;
+  --accent: #3cff78; --accent-hover: #8bffad; --accent-ink: #061109;
+  --accent-pale: #58a66b; --accent-soft: #123d20; --accent-ring: rgba(60, 255, 120, .3);
+  --hero-from: #0d2113; --hero-to: #174d28;
+  --success: #78e6a0; --success-bg: #163d25; --warning: #e8c46a; --warning-bg: #44391d; --error: #ff8282; --error-bg: #4b2222;
+}
+
+/* An original blue-black theme with a luminous, low-glare periwinkle accent. */
+[data-theme="obsidian-blue"] {
+  --color-scheme: dark;
+  --font-family: Manrope, Inter, "Segoe UI", Arial, sans-serif;
+  --page-background: radial-gradient(circle at 15% 0%, #1a2030 0%, #0d1018 62%);
+  --browser-chrome-color: #0d1018;
+  --bg: #0d1018; --rail: #121724; --paper: #1a2030; --panel: #1a2030;
+  --ink: #f0f3fa; --muted: #a8b2c8; --line: #38445e; --field-border: #4b5875;
+  --surface-muted: #252d40; --surface-subtle: #151b28;
+  --accent: #9daeff; --accent-hover: #c2ccff; --accent-ink: #161b2b;
+  --accent-pale: #7f91dd; --accent-soft: #263660; --accent-ring: rgba(157, 174, 255, .3);
+  --hero-from: #202957; --hero-to: #414e92;
+  --success: #73d7b0; --success-bg: #183d35; --warning: #f1be72; --warning-bg: #49351d; --error: #f18b9a; --error-bg: #4d2531;
 }

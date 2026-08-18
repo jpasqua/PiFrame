@@ -20,7 +20,9 @@ export function renderAdministrationThemeMetadata(theme: AdministrationTheme): s
     surf: "#eef9f7",
     "lapis-velvet": "#ebe8ed",
     terrazzo: "#f6f0e7",
-    pearl: "#f5f1ed"
+    pearl: "#f5f1ed",
+    "signal-rain": "#050806",
+    "obsidian-blue": "#0d1018"
   };
   return `<meta name="theme-color" content="${colors[theme]}">`;
 }

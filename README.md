@@ -32,7 +32,7 @@ PiFrame is a local-first digital picture frame built with Node.js, TypeScript, S
 * SQLite-backed albums and managed photo storage
 * Unified Administration interface with Dashboard, Frame, Presentation, Schedule, Albums, System Status, and Help views
 * Frame settings for identity, description, location, time zone, language, physical display orientation, and an Administration theme
-* Six Administration themes: Neutral, Parchment, Surf, Lapis Velvet, Terrazzo, and Pearl
+* Eight Administration themes: Neutral, Parchment, Surf, Lapis Velvet, Terrazzo, Pearl, Signal Rain, and Obsidian Blue
 * Assisted location setup using place search, automatic time-zone resolution, and an editable advanced settings disclosure
 * Album creation, renaming, and two-step deletion that removes contained photos and managed assets
 * Administration / Album Detail pages with a batch upload queue, Detail and Grid photo views, larger modal photo previews, rotation, retry, and deletion actions

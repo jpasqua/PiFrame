@@ -10,7 +10,9 @@ export function renderFramePanel(active: boolean, settings: FrameSettings): stri
     { value: "surf", name: "Surf", description: "Pale water, navy, and Inter" },
     { value: "lapis-velvet", name: "Lapis Velvet", description: "Midnight blue, plum, and pearl" },
     { value: "terrazzo", name: "Terrazzo", description: "Earth, ochre, and teal" },
-    { value: "pearl", name: "Pearl", description: "Warm neutrals with amethyst" }
+    { value: "pearl", name: "Pearl", description: "Warm neutrals with amethyst" },
+    { value: "signal-rain", name: "Signal Rain", description: "Terminal green and IBM Plex Mono" },
+    { value: "obsidian-blue", name: "Obsidian Blue", description: "Blue-black with soft periwinkle" }
   ];
   const orientations: Array<{ value: FrameSettings["displayOrientation"]; label: string; arrow: string; shape: "landscape" | "portrait" }> = [
     { value: 0, label: "0 degrees (normal)", arrow: "↑", shape: "landscape" },

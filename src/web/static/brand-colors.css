@@ -1,4 +1,5 @@
-html { background-color: var(--browser-chrome-color); background-image: var(--page-background); color-scheme: light; }
+:root { color-scheme: var(--color-scheme); }
+html { background-color: var(--browser-chrome-color); background-image: var(--page-background); color-scheme: var(--color-scheme); }
 body { background-color: var(--browser-chrome-color); background-image: var(--page-background); }
 /* Safari 26 uses a fixed, solid top color as the source for its browser-chrome tint. */
 body::before { content: ""; position: fixed; z-index: 0; top: 0; left: 0; width: 100%; height: 6px; background-color: var(--browser-chrome-color); pointer-events: none; }
@@ -72,6 +73,14 @@ nav button.active, nav button:hover { background: var(--accent-soft); }
 .theme-preview[data-theme-preview="pearl"] i { background:#fffdfa; }
 .theme-preview[data-theme-preview="pearl"] b { background:#503847; }
 .theme-preview[data-theme-preview="pearl"] em { background:#73508a; }
+.theme-preview[data-theme-preview="signal-rain"] { background:#050806; }
+.theme-preview[data-theme-preview="signal-rain"] i { background:#101812; }
+.theme-preview[data-theme-preview="signal-rain"] b { background:#d8fbe2; }
+.theme-preview[data-theme-preview="signal-rain"] em { background:#3cff78; }
+.theme-preview[data-theme-preview="obsidian-blue"] { background:#0d1018; }
+.theme-preview[data-theme-preview="obsidian-blue"] i { background:#1a2030; }
+.theme-preview[data-theme-preview="obsidian-blue"] b { background:#f0f3fa; }
+.theme-preview[data-theme-preview="obsidian-blue"] em { background:#9daeff; }
 .album-name:hover { color: var(--accent-hover); }
 
 nav a:hover { background: var(--accent-soft); }
