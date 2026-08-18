@@ -1,4 +1,4 @@
-const themeColors = { neutral: "#fafafa", parchment: "#fbf8f0", surf: "#eef9f7" };
+const themeColors = { neutral: "#fafafa", parchment: "#fbf8f0", surf: "#eef9f7", "lapis-velvet": "#ebe8ed", terrazzo: "#f6f0e7", pearl: "#f5f1ed" };
 const savedTheme = document.documentElement.dataset.theme;
 
 function applyThemePreview(theme) {

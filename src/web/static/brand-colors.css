@@ -60,6 +60,18 @@ nav button.active, nav button:hover { background: var(--accent-soft); }
 .theme-preview[data-theme-preview="surf"] i { background:#fff; }
 .theme-preview[data-theme-preview="surf"] b { background:#0f4258; }
 .theme-preview[data-theme-preview="surf"] em { background:#e7f1f1; }
+.theme-preview[data-theme-preview="lapis-velvet"] { background:#ebe8ed; }
+.theme-preview[data-theme-preview="lapis-velvet"] i { background:#f8f4ec; }
+.theme-preview[data-theme-preview="lapis-velvet"] b { background:#202a55; }
+.theme-preview[data-theme-preview="lapis-velvet"] em { background:#5a365f; }
+.theme-preview[data-theme-preview="terrazzo"] { background:#f6f0e7; }
+.theme-preview[data-theme-preview="terrazzo"] i { background:#fffaf2; }
+.theme-preview[data-theme-preview="terrazzo"] b { background:#614839; }
+.theme-preview[data-theme-preview="terrazzo"] em { background:#167c79; }
+.theme-preview[data-theme-preview="pearl"] { background:#f5f1ed; }
+.theme-preview[data-theme-preview="pearl"] i { background:#fffdfa; }
+.theme-preview[data-theme-preview="pearl"] b { background:#503847; }
+.theme-preview[data-theme-preview="pearl"] em { background:#73508a; }
 .album-name:hover { color: var(--accent-hover); }
 
 nav a:hover { background: var(--accent-soft); }

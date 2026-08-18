@@ -7,7 +7,10 @@ export function renderFramePanel(active: boolean, settings: FrameSettings): stri
   const themes: Array<{ value: AdministrationTheme; name: string; description: string }> = [
     { value: "neutral", name: "Neutral", description: "Slate and Georgia" },
     { value: "parchment", name: "Parchment", description: "Warm field guide and Inter" },
-    { value: "surf", name: "Surf", description: "Pale water, navy, and Inter" }
+    { value: "surf", name: "Surf", description: "Pale water, navy, and Inter" },
+    { value: "lapis-velvet", name: "Lapis Velvet", description: "Midnight blue, plum, and pearl" },
+    { value: "terrazzo", name: "Terrazzo", description: "Earth, ochre, and teal" },
+    { value: "pearl", name: "Pearl", description: "Warm neutrals with amethyst" }
   ];
   const orientations: Array<{ value: FrameSettings["displayOrientation"]; label: string; arrow: string; shape: "landscape" | "portrait" }> = [
     { value: 0, label: "0 degrees (normal)", arrow: "↑", shape: "landscape" },

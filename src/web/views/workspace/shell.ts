@@ -17,7 +17,10 @@ export function renderAdministrationThemeMetadata(theme: AdministrationTheme): s
   const colors: Record<AdministrationTheme, string> = {
     neutral: "#fafafa",
     parchment: "#fbf8f0",
-    surf: "#eef9f7"
+    surf: "#eef9f7",
+    "lapis-velvet": "#ebe8ed",
+    terrazzo: "#f6f0e7",
+    pearl: "#f5f1ed"
   };
   return `<meta name="theme-color" content="${colors[theme]}">`;
 }
@@ -31,6 +34,7 @@ export function renderWorkspaceShell({ activeSection, display, flash, helpConten
   <head>
     <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">${renderAdministrationThemeMetadata(theme)}<title>Settings - PiFrame</title>
     <link rel="stylesheet" href="/assets/app/workspace.css">
+    <link rel="stylesheet" href="/assets/app/dashboard.css">
     <link rel="stylesheet" href="/assets/app/general-location.css">
     <link rel="stylesheet" href="/assets/app/clock-settings.css">
     <link rel="stylesheet" href="/assets/app/themes.css">

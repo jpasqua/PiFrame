@@ -85,7 +85,7 @@ export function renderSettingsPage(context: AppContext, flash: FlashMessage, req
   const helpContents = renderHelpContents(activeSection === "help");
 
   const panels = [
-    renderDashboardPanel(activeSection === "dashboard", display, stats, displayOn, context.config.platform === "desktop"),
+    renderDashboardPanel(activeSection === "dashboard", display, frame, stats, folders.length, displayOn),
     renderFramePanel(activeSection === "general", frame),
     renderPresentationPanel(activeSection === "presentation", display, allFolders, folderChecks),
     renderSchedulePanel(activeSection === "schedule", schedule),

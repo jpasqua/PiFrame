@@ -32,7 +32,7 @@ PiFrame is a local-first digital picture frame built with Node.js, TypeScript, S
 * SQLite-backed albums and managed photo storage
 * Unified Administration interface with Dashboard, Frame, Presentation, Schedule, Albums, System Status, and Help views
 * Frame settings for identity, description, location, time zone, language, physical display orientation, and an Administration theme
-* Three Administration themes: Neutral, Parchment, and Surf
+* Six Administration themes: Neutral, Parchment, Surf, Lapis Velvet, Terrazzo, and Pearl
 * Assisted location setup using place search, automatic time-zone resolution, and an editable advanced settings disclosure
 * Album creation, renaming, and two-step deletion that removes contained photos and managed assets
 * Administration / Album Detail pages with a batch upload queue, Detail and Grid photo views, larger modal photo previews, rotation, retry, and deletion actions
@@ -42,7 +42,7 @@ PiFrame is a local-first digital picture frame built with Node.js, TypeScript, S
 * Non-destructive rotation preserved as photo metadata and reflected in regenerated derivatives
 * Full-screen slideshow with album selection, ordering, adaptive one-, two-, or three-photo layouts, fit or Fill and Crop sizing, and slide transitions
 * Optional clock and weather overlays; weather supports current conditions, a five-day forecast, and Imperial or Metric units
-* Daily display schedule with immediate “Turn on frame now” and “Turn off frame now” overrides
+* Daily display schedule with immediate “Turn frame on” and “Turn frame off” overrides
 * Local health endpoint, durable system events, and stale upload staging cleanup
 * Pi deployment templates for a loopback-only systemd service and Chromium kiosk autostart
 

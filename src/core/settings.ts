@@ -32,10 +32,10 @@ export interface ScheduleSettings {
   overrideState: "follow-schedule" | "force-on" | "force-off";
 }
 
-export type AdministrationTheme = "neutral" | "parchment" | "surf";
+export type AdministrationTheme = "neutral" | "parchment" | "surf" | "lapis-velvet" | "terrazzo" | "pearl";
 
 export function normalizeAdministrationTheme(value: unknown): AdministrationTheme {
-  return value === "neutral" || value === "parchment" || value === "surf" ? value : "surf";
+  return value === "neutral" || value === "parchment" || value === "surf" || value === "lapis-velvet" || value === "terrazzo" || value === "pearl" ? value : "surf";
 }
 
 export function createDefaultFrameSettings(): FrameSettings {

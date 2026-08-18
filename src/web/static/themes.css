@@ -93,3 +93,45 @@
   --error: #a84d49;
   --error-bg: #f9e9e7;
 }
+
+/* Inspired by Figma's Lapis velvet evening palette: midnight blue and plum. */
+[data-theme="lapis-velvet"] {
+  --font-family: Inter, "Segoe UI", Arial, sans-serif;
+  --page-background: radial-gradient(circle at 12% 0%, #f5f1f3 0%, #e7e5eb 55%, #ddddea 100%);
+  --browser-chrome-color: #ebe8ed;
+  --bg: #e7e5eb; --rail: #f8f5f3; --paper: #fffdf9; --panel: #fffdf9;
+  --ink: #252444; --muted: #66627a; --line: #d5d0d9; --field-border: #beb8c5;
+  --surface-muted: #eeeaf0; --surface-subtle: #faf8fa;
+  --accent: #343f78; --accent-hover: #252d5a; --accent-ink: #ffffff;
+  --accent-pale: #a9acd0; --accent-soft: #e3e4f5; --accent-ring: rgba(52, 63, 120, .22);
+  --hero-from: #232b59; --hero-to: #5b3866;
+  --success: #316b61; --success-bg: #e1f0eb; --warning: #8c651c; --warning-bg: #faf0dc; --error: #984d61; --error-bg: #f8e8ed;
+}
+
+/* Inspired by Figma's Terrazzo palette: earthy stone, ochre, and teal. */
+[data-theme="terrazzo"] {
+  --font-family: Inter, "Segoe UI", Arial, sans-serif;
+  --page-background: radial-gradient(circle at 15% 0%, #faf5ec 0%, #f1e7d9 55%, #eadbc9 100%);
+  --browser-chrome-color: #f6f0e7;
+  --bg: #f1e7d9; --rail: #fffaf2; --paper: #fffdf8; --panel: #fffdf8;
+  --ink: #372a25; --muted: #78675c; --line: #dfcdb9; --field-border: #cdb7a0;
+  --surface-muted: #f3e7d8; --surface-subtle: #fcf7ef;
+  --accent: #167c79; --accent-hover: #105b59; --accent-ink: #ffffff;
+  --accent-pale: #8fc3bb; --accent-soft: #dff1ec; --accent-ring: rgba(22, 124, 121, .22);
+  --hero-from: #684a3d; --hero-to: #167c79;
+  --success: #396f56; --success-bg: #e4f0e5; --warning: #9a6715; --warning-bg: #fbefd5; --error: #9b4e42; --error-bg: #fae9e4;
+}
+
+/* Inspired by Figma's Pearl palette: cream, walnut, and an amethyst accent. */
+[data-theme="pearl"] {
+  --font-family: Inter, "Segoe UI", Arial, sans-serif;
+  --page-background: radial-gradient(circle at 15% 0%, #fcf9f5 0%, #f1e9e3 60%, #e9ddd5 100%);
+  --browser-chrome-color: #f5f1ed;
+  --bg: #f1e9e3; --rail: #fffdfa; --paper: #fffdfa; --panel: #fffdfa;
+  --ink: #392c31; --muted: #76666b; --line: #decfd0; --field-border: #cbb9bc;
+  --surface-muted: #f2e8e7; --surface-subtle: #fcf8f6;
+  --accent: #73508a; --accent-hover: #523466; --accent-ink: #ffffff;
+  --accent-pale: #bfaacb; --accent-soft: #eee4f0; --accent-ring: rgba(115, 80, 138, .22);
+  --hero-from: #523b47; --hero-to: #73508a;
+  --success: #4d7255; --success-bg: #e7f0e5; --warning: #92631a; --warning-bg: #faefd8; --error: #9d4b59; --error-bg: #fae8ec;
+}
